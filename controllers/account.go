@@ -49,6 +49,25 @@ func CreateAccount(c *gin.Context){
 
 
 }
+// No outside access
+func getUniqueAccNo()(string,error){
+	const maxAttempts = 5
+	for i:=0;i<maxAttempts;i++{
+		accountNo, err := utils.GenerateAccountNo()
+		if err != nil{
+            return "",err
+		}
+		var account models.Account
+		err = database.DB.Where("account_no=?",accountNo).Take(&account).Error
+		if errors.Is(err,gorm.ErrRecordNotFound){
+			return accountNo,nil
+		}
+		if err !=nil{
+			return "",err
+		}
+	}
+	return "",errors.New("Couldn't generate a unique account number")
+}
 func Deposit(c *gin.Context){
 	var InputDepo dto.Deposit
 	if err:=c.ShouldBindJSON(&InputDepo); err != nil{
@@ -76,22 +95,36 @@ func Deposit(c *gin.Context){
 		"NewBalance": account.Balance,
 	})
 }
-// No outside access
-func getUniqueAccNo()(string,error){
-	const maxAttempts = 5
-	for i:=0;i<maxAttempts;i++{
-		accountNo, err := utils.GenerateAccountNo()
-		if err != nil{
-            return "",err
-		}
-		var account models.Account
-		err = database.DB.Where("account_no=?",accountNo).Take(&account).Error
-		if errors.Is(err,gorm.ErrRecordNotFound){
-			return accountNo,nil
-		}
-		if err !=nil{
-			return "",err
-		}
+func Withdraw(c *gin.Context){
+	var withdrawInput dto.Withdraw
+	if err:= c.ShouldBindJSON(&withdrawInput); err !=nil{
+		c.JSON(http.StatusBadRequest,gin.H{"error":err.Error()})
+		return
 	}
-	return "",errors.New("Couldn't generate a unique account number")
+	var account models.Account
+	err:=database.DB.Where("account_no=?",withdrawInput.AccountNo).Take(&account).Error
+	if err != nil{
+		if errors.Is(err,gorm.ErrRecordNotFound){
+			c.JSON(http.StatusNotFound,gin.H{"error":err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
+		return
+	}
+	if account.Balance < withdrawInput.Amount{
+		c.JSON(http.StatusBadRequest,gin.H{"msg":"Insufficient Account Balance"})
+		return
+	}
+	account.Balance -= withdrawInput.Amount
+	err=database.DB.Save(&account).Error
+	if err!= nil{
+		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK,gin.H{
+		"msg":"Successfully Wtihdrawn",
+		"NewBalance": account.Balance,
+	})
+
+
 }
