@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func CreateAccount(c *gin.Context){
@@ -127,4 +128,85 @@ func Withdraw(c *gin.Context){
 	})
 
 
+}
+func MoneyTransfer(c *gin.Context){
+	var transferInput dto.TransferInput
+	if err:= c.ShouldBindJSON(&transferInput); err != nil{
+		c.JSON(http.StatusBadRequest,gin.H{"error":err.Error()})
+		return
+	}
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+    c.JSON(http.StatusInternalServerError, gin.H{
+        "error": tx.Error.Error(),
+    })
+    return
+}
+	var senderAccount models.Account
+	if err:=tx.Clauses(clause.Locking{Strength: "update"}).
+	Where("account_no=?",transferInput.SenderAccNo).
+	Take(&senderAccount).Error; err != nil{
+		if errors.Is(err,gorm.ErrRecordNotFound){
+			tx.Rollback()
+			c.JSON(http.StatusNotFound,gin.H{"error":"Sender doesn't exists"})
+			return
+
+		}
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
+		return
+	}
+	var receiverAccount models.Account
+	if err:= tx.Clauses(clause.Locking{Strength: "update"}).
+	Where("account_no=?",transferInput.ReceiverAccNo).
+	Take(&receiverAccount).Error; err  != nil{
+		if errors.Is(err,gorm.ErrRecordNotFound){
+           tx.Rollback()
+		   c.JSON(http.StatusNotFound,gin.H{"error":"Receiver doesn't exists"})
+		   return
+		}
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
+		return
+	}
+	if transferInput.SenderAccNo == transferInput.ReceiverAccNo {
+    tx.Rollback()
+
+    c.JSON(http.StatusBadRequest, gin.H{
+        "error":"sender and receiver cannot be same",
+    })
+
+    return
+}
+	if senderAccount.Status != "ACTIVE"|| receiverAccount.Status != "ACTIVE"{
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest,gin.H{"error":"both account must be active state"})
+		return
+	}
+
+	if transferInput.Amount > senderAccount.Balance{
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest,gin.H{"error":"Insufficient Balance"})
+		return
+
+	}
+	senderAccount.Balance -= transferInput.Amount
+	if err:= tx.Save(&senderAccount).Error; err != nil{
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
+		return
+	}
+	receiverAccount.Balance += transferInput.Amount
+	if err:= tx.Save(&receiverAccount).Error; err != nil{
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
+		return
+	}
+	if err := tx.Commit().Error; err != nil {
+    c.JSON(http.StatusInternalServerError, gin.H{
+        "error": err.Error(),
+    })
+    return
+}
+	c.JSON(http.StatusOK,gin.H{"SenderNewBalance":senderAccount.Balance,"ReceiverNewBalance":receiverAccount.Balance})
 }

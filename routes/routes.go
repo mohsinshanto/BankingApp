@@ -20,6 +20,7 @@ func RouteHandler(r *gin.Engine){
      account.POST("/",controllers.CreateAccount)
 	 account.POST("/deposit",controllers.Deposit)
 	 account.POST("/withdraw",controllers.Withdraw)
+	 account.POST("/transfer",controllers.MoneyTransfer)
 	}
 	
 }
