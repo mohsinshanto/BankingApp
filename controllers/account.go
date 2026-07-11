@@ -92,9 +92,26 @@ func Deposit(c *gin.Context){
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
 	}
+	if account.Status != "ACTIVE" {
+    tx.Rollback()
+    c.JSON(http.StatusBadRequest,gin.H{"error":"Account is not active"})
+    return
+    }
 	account.Balance += InputDepo.Amount
 	err=tx.Save(&account).Error
 	if err!= nil{
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
+		return
+	}
+	transaction:= models.Transaction{
+		ToAccount: account.AccountNo,
+		Amount: InputDepo.Amount,
+		Type: "DEPOSIT",
+		Description: "Cash deposit",
+		Status: "SUCCESS",
+	}
+	if err:= tx.Create(&transaction).Error; err!=nil{
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
@@ -131,6 +148,11 @@ func Withdraw(c *gin.Context){
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
 	}
+	if account.Status != "ACTIVE" {
+    tx.Rollback()
+    c.JSON(http.StatusBadRequest,gin.H{"error":"Account is not active"})
+    return
+    }
 	if account.Balance < withdrawInput.Amount{
 		tx.Rollback()
 		c.JSON(http.StatusBadRequest,gin.H{"msg":"Insufficient Account Balance"})
@@ -139,6 +161,18 @@ func Withdraw(c *gin.Context){
 	account.Balance -= withdrawInput.Amount
 	err=tx.Save(&account).Error
 	if err!= nil{
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
+		return
+	}
+	transaction:= models.Transaction{
+		FromAccount: account.AccountNo,
+		Amount: withdrawInput.Amount,
+		Type: "WITHDRAW",
+		Description: "Cash withdraw",
+		Status: "SUCCESS",
+	}
+	if err:= tx.Create(&transaction).Error; err!=nil{
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
@@ -223,6 +257,19 @@ func MoneyTransfer(c *gin.Context){
 	}
 	receiverAccount.Balance += transferInput.Amount
 	if err:= tx.Save(&receiverAccount).Error; err != nil{
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
+		return
+	}
+	transaction:= models.Transaction{
+		FromAccount: senderAccount.AccountNo,
+		ToAccount: receiverAccount.AccountNo,
+		Amount: transferInput.Amount,
+		Type: "TRANSFER",
+		Description: "Cash transfer",
+		Status: "SUCCESS",
+	}
+	if err:= tx.Create(&transaction).Error; err!=nil{
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
