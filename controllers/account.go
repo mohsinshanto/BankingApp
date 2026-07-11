@@ -75,19 +75,31 @@ func Deposit(c *gin.Context){
 		c.JSON(http.StatusBadRequest,gin.H{"error":err.Error()})
 		return
 	}
+	tx:= database.DB.Begin()
+	if tx.Error != nil{
+		c.JSON(http.StatusInternalServerError,gin.H{"error":tx.Error.Error()})
+		return
+	}
 	var account models.Account
-	err:=database.DB.Where("account_no=?",InputDepo.AccountNo).Take(&account).Error
+	err:=tx.Clauses(clause.Locking{Strength: "update"}).Where("account_no=?",InputDepo.AccountNo).Take(&account).Error
 	if err != nil{
 		if errors.Is(err,gorm.ErrRecordNotFound){
+			tx.Rollback()
 			c.JSON(http.StatusNotFound,gin.H{"error":err.Error()})
 			return
 		}
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
 	}
 	account.Balance += InputDepo.Amount
-	err=database.DB.Save(&account).Error
+	err=tx.Save(&account).Error
 	if err!= nil{
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
+		return
+	}
+	if err:=tx.Commit().Error;err != nil{
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
 	}
@@ -102,23 +114,36 @@ func Withdraw(c *gin.Context){
 		c.JSON(http.StatusBadRequest,gin.H{"error":err.Error()})
 		return
 	}
+	tx:= database.DB.Begin()
+	if tx.Error != nil{
+		c.JSON(http.StatusInternalServerError,gin.H{"error":tx.Error.Error()})
+		return
+	}
 	var account models.Account
-	err:=database.DB.Where("account_no=?",withdrawInput.AccountNo).Take(&account).Error
+	err:=tx.Clauses(clause.Locking{Strength: "update"}).Where("account_no=?",withdrawInput.AccountNo).Take(&account).Error
 	if err != nil{
 		if errors.Is(err,gorm.ErrRecordNotFound){
+			tx.Rollback()
 			c.JSON(http.StatusNotFound,gin.H{"error":err.Error()})
 			return
 		}
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
 	}
 	if account.Balance < withdrawInput.Amount{
+		tx.Rollback()
 		c.JSON(http.StatusBadRequest,gin.H{"msg":"Insufficient Account Balance"})
 		return
 	}
 	account.Balance -= withdrawInput.Amount
-	err=database.DB.Save(&account).Error
+	err=tx.Save(&account).Error
 	if err!= nil{
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
+		return
+	}
+	if err:= tx.Commit().Error; err != nil{
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
 	}
