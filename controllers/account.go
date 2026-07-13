@@ -104,14 +104,8 @@ func Deposit(c *gin.Context){
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
 	}
-	transaction:= models.Transaction{
-		ToAccount: account.AccountNo,
-		Amount: InputDepo.Amount,
-		Type: "DEPOSIT",
-		Description: "Cash deposit",
-		Status: "SUCCESS",
-	}
-	if err:= tx.Create(&transaction).Error; err!=nil{
+	err = createTransaction(tx,"",account.AccountNo,InputDepo.Amount,"DEPOSIT","Money deposited")
+	if err != nil{
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
@@ -165,14 +159,8 @@ func Withdraw(c *gin.Context){
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
 	}
-	transaction:= models.Transaction{
-		FromAccount: account.AccountNo,
-		Amount: withdrawInput.Amount,
-		Type: "WITHDRAW",
-		Description: "Cash withdraw",
-		Status: "SUCCESS",
-	}
-	if err:= tx.Create(&transaction).Error; err!=nil{
+	err = createTransaction(tx,account.AccountNo,"",withdrawInput.Amount,"WITHDRAW","Money withdrawn")
+	if err != nil{
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
@@ -261,15 +249,8 @@ func MoneyTransfer(c *gin.Context){
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
 	}
-	transaction:= models.Transaction{
-		FromAccount: senderAccount.AccountNo,
-		ToAccount: receiverAccount.AccountNo,
-		Amount: transferInput.Amount,
-		Type: "TRANSFER",
-		Description: "Cash transfer",
-		Status: "SUCCESS",
-	}
-	if err:= tx.Create(&transaction).Error; err!=nil{
+	err := createTransaction(tx,senderAccount.AccountNo,receiverAccount.AccountNo,transferInput.Amount,"TRANSFER","Money transfer")
+	if err != nil{
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})
 		return
@@ -281,4 +262,16 @@ func MoneyTransfer(c *gin.Context){
     return
 }
 	c.JSON(http.StatusOK,gin.H{"SenderNewBalance":senderAccount.Balance,"ReceiverNewBalance":receiverAccount.Balance})
+}
+// createTransaction for Dry principle
+func createTransaction(tx *gorm.DB,fromAccount string,toAccount string,amount float64,transType string,description string)error{
+	transaction := models.Transaction{
+		FromAccount: fromAccount,
+		ToAccount: toAccount,
+		Amount: amount,
+		Type: transType,
+		Description: description,
+		Status: "SUCCESS",
+	}
+	return tx.Create(&transaction).Error
 }
