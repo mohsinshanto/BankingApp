@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -17,6 +18,11 @@ func GetTransactionsByAccount(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "2")
 	transactionType := c.Query("type")
+	fromDate := c.Query("from")
+	toDate := c.Query("to")
+	sortBy := c.DefaultQuery("sort", "newest")
+	var fromTime time.Time 
+	var toTime time.Time
 
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page < 1 {
@@ -59,7 +65,58 @@ func GetTransactionsByAccount(c *gin.Context) {
 			return
 		}
 	}
+	if fromDate != ""{
+		var err error
+		fromTime,err = time.Parse("2006-01-02",fromDate)
+		if err != nil{
+			c.JSON(http.StatusBadRequest,gin.H{"error":"invalid data format.Use YYYY-MM-DD"})
+			return
+		}
+	}
+	if toDate != ""{
+		var err error
+		toTime,err = time.Parse("2006-01-02",toDate)
+		if err != nil{
+			c.JSON(http.StatusBadRequest,gin.H{"error":"invalid data format.Use YYYY-MM-DD"})
+			return
+		}
+	}
+	if !fromTime.IsZero() && !toTime.IsZero(){
+		if fromTime.After(toTime){
+			c.JSON(http.StatusBadRequest,gin.H{"error":"from date can't be after to date"})
+			return
+		}
+	}
+	if !fromTime.IsZero(){
+		query = query.Where("created_at >= ?",fromTime)
+	}
+	if !toTime.IsZero(){
+		toTime = toTime.Add(24*time.Hour- 1*time.Nanosecond)
+		query = query.Where("created_at <= ?",toTime)
+	}
+sortBy = strings.ToLower(sortBy)
 
+var orderBy string
+
+switch sortBy {
+case "newest":
+	orderBy = "created_at DESC"
+
+case "oldest":
+	orderBy = "created_at ASC"
+
+case "amount_asc":
+	orderBy = "amount ASC"
+
+case "amount_desc":
+	orderBy = "amount DESC"
+
+default:
+	c.JSON(http.StatusBadRequest, gin.H{
+		"error": "invalid sort option",
+	})
+	return
+}
 	var total int64
 	err = query.Count(&total).Error
 	if err != nil {
@@ -69,7 +126,7 @@ func GetTransactionsByAccount(c *gin.Context) {
 
 	var transactions []models.Transaction
 	err = query.
-		Order("created_at DESC").
+		Order(orderBy).
 		Limit(limit).
 		Offset(offset).
 		Find(&transactions).Error
