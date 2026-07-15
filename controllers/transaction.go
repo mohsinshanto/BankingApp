@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"banking/database"
+	"banking/dto"
 	"banking/models"
 	"errors"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 	"gorm.io/gorm"
 )
 
-
 func GetTransactionsByAccount(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "2")
@@ -21,7 +21,7 @@ func GetTransactionsByAccount(c *gin.Context) {
 	fromDate := c.Query("from")
 	toDate := c.Query("to")
 	sortBy := c.DefaultQuery("sort", "newest")
-	var fromTime time.Time 
+	var fromTime time.Time
 	var toTime time.Time
 
 	page, err := strconv.Atoi(pageStr)
@@ -65,58 +65,58 @@ func GetTransactionsByAccount(c *gin.Context) {
 			return
 		}
 	}
-	if fromDate != ""{
+	if fromDate != "" {
 		var err error
-		fromTime,err = time.Parse("2006-01-02",fromDate)
-		if err != nil{
-			c.JSON(http.StatusBadRequest,gin.H{"error":"invalid data format.Use YYYY-MM-DD"})
+		fromTime, err = time.Parse("2006-01-02", fromDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid data format.Use YYYY-MM-DD"})
 			return
 		}
 	}
-	if toDate != ""{
+	if toDate != "" {
 		var err error
-		toTime,err = time.Parse("2006-01-02",toDate)
-		if err != nil{
-			c.JSON(http.StatusBadRequest,gin.H{"error":"invalid data format.Use YYYY-MM-DD"})
+		toTime, err = time.Parse("2006-01-02", toDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid data format.Use YYYY-MM-DD"})
 			return
 		}
 	}
-	if !fromTime.IsZero() && !toTime.IsZero(){
-		if fromTime.After(toTime){
-			c.JSON(http.StatusBadRequest,gin.H{"error":"from date can't be after to date"})
+	if !fromTime.IsZero() && !toTime.IsZero() {
+		if fromTime.After(toTime) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "from date can't be after to date"})
 			return
 		}
 	}
-	if !fromTime.IsZero(){
-		query = query.Where("created_at >= ?",fromTime)
+	if !fromTime.IsZero() {
+		query = query.Where("created_at >= ?", fromTime)
 	}
-	if !toTime.IsZero(){
-		toTime = toTime.Add(24*time.Hour- 1*time.Nanosecond)
-		query = query.Where("created_at <= ?",toTime)
+	if !toTime.IsZero() {
+		toTime = toTime.Add(24*time.Hour - 1*time.Nanosecond)
+		query = query.Where("created_at <= ?", toTime)
 	}
-sortBy = strings.ToLower(sortBy)
+	sortBy = strings.ToLower(sortBy)
 
-var orderBy string
+	var orderBy string
 
-switch sortBy {
-case "newest":
-	orderBy = "created_at DESC"
+	switch sortBy {
+	case "newest":
+		orderBy = "created_at DESC"
 
-case "oldest":
-	orderBy = "created_at ASC"
+	case "oldest":
+		orderBy = "created_at ASC"
 
-case "amount_asc":
-	orderBy = "amount ASC"
+	case "amount_asc":
+		orderBy = "amount ASC"
 
-case "amount_desc":
-	orderBy = "amount DESC"
+	case "amount_desc":
+		orderBy = "amount DESC"
 
-default:
-	c.JSON(http.StatusBadRequest, gin.H{
-		"error": "invalid sort option",
-	})
-	return
-}
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid sort option",
+		})
+		return
+	}
 	var total int64
 	err = query.Count(&total).Error
 	if err != nil {
@@ -145,4 +145,64 @@ default:
 		"transactions":       transactions,
 	})
 }
-	
+func GetAccountSummary(c *gin.Context) {
+	accountNo := c.Param("accountNo")
+	var account models.Account
+	if err := database.DB.Where("account_no=?", accountNo).Take(&account).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User account not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	// present account balance
+	currentBalance := account.Balance
+	// total deposit
+	var totalDeposit float64
+	err := database.DB.Model(&models.Transaction{}).Select("COALESCE(SUM(amount),0)").Where("to_account=? AND type=?", accountNo, "DEPOSIT").
+		Scan(&totalDeposit).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	// total withdraw
+	var totalWithdraw float64
+	err = database.DB.Model(&models.Transaction{}).Select("COALESCE(SUM(amount),0)").Where("from_account=? AND type=?", accountNo, "WITHDRAW").
+		Scan(&totalWithdraw).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	var totalTransferSent float64
+	err = database.DB.Model(&models.Transaction{}).Select("COALESCE(SUM(amount),0)").Where("from_account=? AND type=?", accountNo, "TRANSFER").
+		Scan(&totalTransferSent).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	var totalTransferReceived float64
+	err = database.DB.Model(&models.Transaction{}).Select("COALESCE(SUM(amount),0)").Where("to_account=? AND type=?", accountNo, "TRANSFER").
+		Scan(&totalTransferReceived).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	var totalTransactions int64
+	err = database.DB.Model(&models.Transaction{}).Where("from_account=? OR to_account=?", accountNo, accountNo).
+		Count(&totalTransactions).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	response := dto.AccountSummaryResponse{
+		AccountNo:             accountNo,
+		CurrentBalance:        currentBalance,
+		TotalTransactions:     totalTransactions,
+		TotalDeposit:          totalDeposit,
+		TotalWtihdraw:         totalWithdraw,
+		TotalTransferSent:     totalTransferSent,
+		TotalTransferReceived: totalTransferReceived,
+	}
+	c.JSON(http.StatusOK, response)
+}
