@@ -206,3 +206,53 @@ func GetAccountSummary(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, response)
 }
+func GetTransactionStatistics(c *gin.Context) {
+	accountNo := c.Param("accountNo")
+	var account models.Account
+	if err := database.DB.Where("account_no=?", accountNo).Take(&account).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "User account not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	var todayCount int64
+	if err := database.DB.
+		Model(&models.Transaction{}).
+		Where("(from_account= ? OR to_account= ?) AND DATE(created_at)= CURDATE()", accountNo, accountNo).
+		Count(&todayCount).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	var thisWeek int64
+	if err := database.DB.
+		Model(&models.Transaction{}).
+		Where("(from_account= ? OR to_account= ?) AND YEARWEEK(created_at, 1)= YEARWEEK(CURDATE(), 1)", accountNo, accountNo).
+		Count(&thisWeek).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	var thisMonth int64
+	if err := database.DB.
+		Model(&models.Transaction{}).
+		Where("(from_account= ? OR to_account= ?) AND YEAR(created_at)= YEAR(CURDATE()) AND MONTH(created_at)= MONTH(CURDATE())", accountNo, accountNo).
+		Count(&thisMonth).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	var totalTransactions int64
+	if err := database.DB.Model(&models.Transaction{}).Where("from_account= ? OR to_account= ?", accountNo, accountNo).
+		Count(&totalTransactions).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"account_no":         account.AccountNo,
+		"today_transactions": todayCount,
+		"week_transactions":  thisWeek,
+		"month_transactions": thisMonth,
+		"total_transactions": totalTransactions,
+	})
+
+}
