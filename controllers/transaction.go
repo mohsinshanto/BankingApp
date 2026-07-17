@@ -279,3 +279,45 @@ func AccountDetails(c *gin.Context) {
 		},
 	})
 }
+func AccountStatusUpdate(c *gin.Context) {
+	accountNo := c.Param("accountNo")
+	var inputStatus dto.AccountStatusUpdate
+	if err := c.ShouldBindJSON(&inputStatus); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	inputStatus.Status = strings.ToUpper(inputStatus.Status)
+	switch inputStatus.Status {
+	case "ACTIVE", "BLOCKED", "CLOSED":
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid status response",
+		})
+		return
+	}
+	var account models.Account
+	if err := database.DB.Where("account_no=?", accountNo).Take(&account).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Account not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if account.Status == inputStatus.Status {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Account is already in this status",
+		})
+		return
+	}
+	account.Status = inputStatus.Status
+	if err := database.DB.Save(&account).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "Account status updated successfully",
+		"account_no":     account.AccountNo,
+		"account_status": account.Status,
+	})
+}

@@ -24,6 +24,7 @@ func RouteHandler(r *gin.Engine) {
 		account.GET("/transaction/:accountNo", controllers.GetTransactionsByAccount)
 		account.GET("/:accountNo/summary", controllers.GetAccountSummary)
 		account.GET("/:accountNo/stat", controllers.GetTransactionStatistics)
+		account.PATCH("/:accountNo/status", controllers.AccountStatusUpdate)
 	}
 
 }
