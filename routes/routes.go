@@ -20,6 +20,7 @@ func RouteHandler(r *gin.Engine) {
 		account.POST("/deposit", controllers.Deposit)
 		account.POST("/withdraw", controllers.Withdraw)
 		account.POST("/transfer", controllers.MoneyTransfer)
+		account.GET("/:accountNo/details", controllers.AccountDetails)
 		account.GET("/transaction/:accountNo", controllers.GetTransactionsByAccount)
 		account.GET("/:accountNo/summary", controllers.GetAccountSummary)
 		account.GET("/:accountNo/stat", controllers.GetTransactionStatistics)

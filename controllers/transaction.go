@@ -256,3 +256,26 @@ func GetTransactionStatistics(c *gin.Context) {
 	})
 
 }
+func AccountDetails(c *gin.Context) {
+	accountNo := c.Param("accountNo")
+	var account models.Account
+	if err := database.DB.Preload("User", func(db *gorm.DB) *gorm.DB { return db.Select("id", "name", "email") }).
+		Where("account_no=?", accountNo).Take(&account).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Account Not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"account_no": account.AccountNo,
+		"balance":    account.Balance,
+		"status":     account.Status,
+		"created_at": account.CreatedAt,
+		"user": gin.H{
+			"name":  account.User.Name,
+			"email": account.User.Name,
+		},
+	})
+}
