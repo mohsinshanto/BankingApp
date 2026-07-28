@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RouteHandler(r *gin.Engine) {
+func RouteHandler(r *gin.Engine, accountController *controllers.AccountController) {
 	user := r.Group("/user")
 	{
 		user.POST("/register", controllers.Register)
@@ -16,8 +16,8 @@ func RouteHandler(r *gin.Engine) {
 	account := r.Group("/account")
 	account.Use(middleware.AuthMiddleware)
 	{
-		account.POST("/", controllers.CreateAccount)
-		account.POST("/deposit", controllers.Deposit)
+		account.POST("/", accountController.CreateAccount)
+		account.POST("/deposit", accountController.Deposit)
 		account.POST("/withdraw", controllers.Withdraw)
 		account.POST("/transfer", controllers.MoneyTransfer)
 		account.GET("/:accountNo/details", controllers.AccountDetails)
