@@ -91,3 +91,30 @@ func (ac *AccountController) Withdraw(c *gin.Context) {
 	response.Success(c, http.StatusOK, "money withdrawn successfully", account)
 
 }
+func (ac *AccountController) MoneyTransfer(c *gin.Context) {
+	var transferInput dto.TransferInput
+	if err := c.ShouldBindJSON(&transferInput); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	result, err := ac.service.MoneyTransfer(&transferInput)
+	if err != nil {
+		switch {
+		case errors.Is(err, appError.ErrAccountNotFound):
+			response.Error(c, http.StatusNotFound, err.Error())
+		case errors.Is(err, appError.ErrSameAccountTransfer):
+			response.Error(c, http.StatusBadRequest, err.Error())
+		case errors.Is(err, appError.ErrSenderAccountNotActive):
+			response.Error(c, http.StatusBadRequest, err.Error())
+		case errors.Is(err, appError.ErrReceiverAccountNotActive):
+			response.Error(c, http.StatusBadRequest, err.Error())
+		case errors.Is(err, appError.ErrInsufficientBalance):
+			response.Error(c, http.StatusBadRequest, err.Error())
+		default:
+			response.Error(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	response.Success(c, http.StatusOK, "Money transffered successfully", result)
+
+}
