@@ -1,7 +1,9 @@
 package repositories
 
 import (
+	appError "banking/errors"
 	"banking/models"
+	"errors"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -42,6 +44,9 @@ func (r *accountRepository) FindByAccountNoForUpdate(tx *gorm.DB, accountNo stri
 	var account models.Account
 	err := tx.Clauses(clause.Locking{Strength: "update"}).Where("account_no=?", accountNo).Take(&account).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, appError.ErrAccountNotFound
+		}
 		return nil, err
 	}
 	return &account, nil
