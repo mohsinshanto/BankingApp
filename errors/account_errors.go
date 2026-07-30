@@ -6,6 +6,7 @@ var (
 	ErrAccountAlreadyExists     = errors.New("account already exists")
 	ErrAccountNotFound          = errors.New("account not found")
 	ErrInvalidStatus            = errors.New("invalid account status")
+	ErrStatusAlreadySet         = errors.New("account is already in this status")
 	ErrInsufficientBalance      = errors.New("Insufficient balance")
 	ErrInvalidAmount            = errors.New("invalid amount")
 	ErrSameAccountTransfer      = errors.New("cannot transfer to the same account")

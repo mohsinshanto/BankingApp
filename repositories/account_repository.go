@@ -18,6 +18,7 @@ type AccountRepository interface {
 	Update(tx *gorm.DB, account *models.Account) error
 	BeginTx() *gorm.DB
 	CreateTransaction(tx *gorm.DB, transaction *models.Transaction) error
+	AccountStatusUpdate(account *models.Account) error
 }
 type accountRepository struct {
 	db *gorm.DB
@@ -55,6 +56,9 @@ func (r *accountRepository) FindByAccountNoForUpdate(tx *gorm.DB, accountNo stri
 func (r *accountRepository) Update(tx *gorm.DB, account *models.Account) error {
 	return tx.Save(account).Error
 }
+func (r *accountRepository) AccountStatusUpdate(account *models.Account) error {
+	return r.db.Save(account).Error
+}
 func (r *accountRepository) BeginTx() *gorm.DB {
 	return r.db.Begin()
 }
@@ -65,6 +69,9 @@ func (r *accountRepository) FindByAccountNo(accountNo string) (*models.Account, 
 	var account models.Account
 	err := r.db.Where("account_no = ?", accountNo).Take(&account).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, appError.ErrAccountNotFound
+		}
 		return nil, err
 	}
 	return &account, nil

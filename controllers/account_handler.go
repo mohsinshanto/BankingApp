@@ -132,3 +132,26 @@ func (ac *AccountController) AccountDetails(c *gin.Context) {
 	}
 	response.Success(c, http.StatusOK, "Account Details Found", details)
 }
+func (ac *AccountController) AccountStatusUpdate(c *gin.Context) {
+	accountNo := c.Param("accountNo")
+	var status dto.AccountStatusUpdate
+	if err := c.ShouldBindJSON(&status); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	account, err := ac.service.AccountStatusUpdate(accountNo, status.Status)
+	if err != nil {
+		switch {
+		case errors.Is(err, appError.ErrAccountNotFound):
+			response.Error(c, http.StatusNotFound, err.Error())
+		case errors.Is(err, appError.ErrStatusAlreadySet):
+			response.Error(c, http.StatusBadRequest, err.Error())
+		case errors.Is(err, appError.ErrInvalidStatus):
+			response.Error(c, http.StatusBadRequest, err.Error())
+		default:
+			response.Error(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	response.Success(c, http.StatusOK, "Account status Updated", account)
+}

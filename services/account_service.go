@@ -7,9 +7,16 @@ import (
 	"banking/repositories"
 	"banking/utils"
 	"errors"
+	"strings"
 
 	"gorm.io/gorm"
 )
+
+var validAccountStatus = map[string]bool{
+	"ACTIVE":  true,
+	"BLOCKED": true,
+	"CLOSED":  true,
+}
 
 type AccountService interface {
 	CreateAccount(userID uint) (*models.Account, error)
@@ -17,6 +24,7 @@ type AccountService interface {
 	Withdraw(accountNo string, amount float64) (*models.Account, error)
 	MoneyTransfer(transferInput *dto.TransferInput) (*dto.TransferResponse, error)
 	AccountDetails(accountNo string) (*dto.AccountDetails, error)
+	AccountStatusUpdate(accountNo, status string) (*models.Account, error)
 }
 type accountService struct {
 	repo repositories.AccountRepository
@@ -173,6 +181,26 @@ func (s *accountService) AccountDetails(accountNo string) (*dto.AccountDetails, 
 		UserName:  account.User.Name,
 		UserEmail: account.User.Email,
 	}, nil
+
+}
+func (s *accountService) AccountStatusUpdate(accountNo, status string) (*models.Account, error) {
+	status = strings.ToUpper(status)
+	if _, ok := validAccountStatus[status]; !ok {
+		return nil, appError.ErrInvalidStatus
+	}
+
+	account, err := s.repo.FindByAccountNo(accountNo)
+	if err != nil {
+		return nil, err
+	}
+	if account.Status == status {
+		return nil, appError.ErrStatusAlreadySet
+	}
+	account.Status = status
+	if err := s.repo.AccountStatusUpdate(account); err != nil {
+		return nil, err
+	}
+	return account, nil
 
 }
 
