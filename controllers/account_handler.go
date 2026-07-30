@@ -118,3 +118,17 @@ func (ac *AccountController) MoneyTransfer(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Money transffered successfully", result)
 
 }
+func (ac *AccountController) AccountDetails(c *gin.Context) {
+	accountNo := c.Param("accountNo")
+	details, err := ac.service.AccountDetails(accountNo)
+	if err != nil {
+		switch {
+		case errors.Is(err, appError.ErrAccountNotFound):
+			response.Error(c, http.StatusNotFound, err.Error())
+		default:
+			response.Error(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	response.Success(c, http.StatusOK, "Account Details Found", details)
+}

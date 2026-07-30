@@ -16,6 +16,7 @@ type AccountService interface {
 	Deposit(accountNo string, amount float64) (*models.Account, error)
 	Withdraw(accountNo string, amount float64) (*models.Account, error)
 	MoneyTransfer(transferInput *dto.TransferInput) (*dto.TransferResponse, error)
+	AccountDetails(accountNo string) (*dto.AccountDetails, error)
 }
 type accountService struct {
 	repo repositories.AccountRepository
@@ -158,6 +159,21 @@ func (s *accountService) MoneyTransfer(transferInput *dto.TransferInput) (*dto.T
 		TransferAmount:    transferInput.Amount,
 		SenderNewBalance:  senderAccount.Balance,
 	}, nil
+}
+func (s *accountService) AccountDetails(accountNo string) (*dto.AccountDetails, error) {
+	account, err := s.repo.FindAccountDetails(accountNo)
+	if err != nil {
+		return nil, err
+	}
+	return &dto.AccountDetails{
+		AccountNo: account.AccountNo,
+		Balance:   account.Balance,
+		Status:    account.Status,
+		CreatedAt: account.CreatedAt,
+		UserName:  account.User.Name,
+		UserEmail: account.User.Email,
+	}, nil
+
 }
 
 // private method not for outside use
