@@ -21,6 +21,7 @@ type AccountRepository interface {
 	CreateTransaction(tx *gorm.DB, transaction *models.Transaction) error
 	AccountStatusUpdate(account *models.Account) error
 	GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error)
+	GetAccountSummary(accountNo string) (*dto.AccountSummary, error)
 }
 type accountRepository struct {
 	db *gorm.DB
@@ -32,6 +33,37 @@ func NewAccountRepository(db *gorm.DB) AccountRepository {
 		db: db,
 	}
 
+}
+func (r *accountRepository) GetAccountSummary(accountNo string) (*dto.AccountSummary, error) {
+	var totalDeposit, totalWithdraw, totalTransferSent, totalTransferReceived float64
+	var totalTransactions int64
+	if err := r.db.Model(&models.Transaction{}).Select("COALESCE(SUM(amount),0)").Where("to_account=? AND type=?", accountNo, "DEPOSIT").
+		Scan(&totalDeposit).Error; err != nil {
+		return nil, err
+	}
+	if err := r.db.Model(&models.Transaction{}).Select("COALESCE(SUM(amount),0)").Where("from_account=? AND type=?", accountNo, "WITHDRAW").
+		Scan(&totalWithdraw).Error; err != nil {
+		return nil, err
+	}
+	if err := r.db.Model(&models.Transaction{}).Select("COALESCE(SUM(amount),0)").Where("from_account=? AND type=?", accountNo, "TRANSFER").
+		Scan(&totalTransferSent).Error; err != nil {
+		return nil, err
+	}
+	if err := r.db.Model(&models.Transaction{}).Select("COALESCE(SUM(amount),0)").Where("to_account=? AND type=?", accountNo, "TRANSFER").
+		Scan(&totalTransferReceived).Error; err != nil {
+		return nil, err
+	}
+	if err := r.db.Model(&models.Transaction{}).Where("from_account=? OR to_account=?", accountNo, accountNo).
+		Count(&totalTransactions).Error; err != nil {
+		return nil, err
+	}
+	return &dto.AccountSummary{
+		TotalTransactions:     totalTransactions,
+		TotalDeposit:          totalDeposit,
+		TotalWithdraw:         totalWithdraw,
+		TotalTransferSent:     totalTransferSent,
+		TotalTransferReceived: totalTransferReceived,
+	}, nil
 }
 func (r *accountRepository) GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error) {
 	var todayCount, weekCount, thisMonthCount, totalCount int64

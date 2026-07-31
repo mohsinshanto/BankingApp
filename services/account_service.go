@@ -26,6 +26,7 @@ type AccountService interface {
 	AccountDetails(accountNo string) (*dto.AccountDetails, error)
 	AccountStatusUpdate(accountNo, status string) (*models.Account, error)
 	GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error)
+	GetAccountSummary(accountNo string) (*dto.AccountSummaryResponse, error)
 }
 type accountService struct {
 	repo repositories.AccountRepository
@@ -35,6 +36,26 @@ func NewAccountService(repo repositories.AccountRepository) AccountService {
 	return &accountService{
 		repo: repo,
 	}
+}
+func (s *accountService) GetAccountSummary(accountNo string) (*dto.AccountSummaryResponse, error) {
+	account, err := s.repo.FindByAccountNo(accountNo)
+	if err != nil {
+		return nil, err
+	}
+	currentBalance := account.Balance
+	result, err := s.repo.GetAccountSummary(accountNo)
+	if err != nil {
+		return nil, err
+	}
+	return &dto.AccountSummaryResponse{
+		AccountNo:             accountNo,
+		CurrentBalance:        currentBalance,
+		TotalTransactions:     result.TotalTransactions,
+		TotalDeposit:          result.TotalDeposit,
+		TotalWithdraw:         result.TotalWithdraw,
+		TotalTransferSent:     result.TotalTransferSent,
+		TotalTransferReceived: result.TotalTransferReceived,
+	}, nil
 }
 func (s *accountService) GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error) {
 	_, err := s.repo.FindByAccountNo(accountNo)

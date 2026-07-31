@@ -200,7 +200,7 @@ func GetAccountSummary(c *gin.Context) {
 		CurrentBalance:        currentBalance,
 		TotalTransactions:     totalTransactions,
 		TotalDeposit:          totalDeposit,
-		TotalWtihdraw:         totalWithdraw,
+		TotalWithdraw:         totalWithdraw,
 		TotalTransferSent:     totalTransferSent,
 		TotalTransferReceived: totalTransferReceived,
 	}
