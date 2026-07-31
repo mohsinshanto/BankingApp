@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"banking/dto"
 	appError "banking/errors"
 	"banking/models"
 	"errors"
@@ -19,6 +20,7 @@ type AccountRepository interface {
 	BeginTx() *gorm.DB
 	CreateTransaction(tx *gorm.DB, transaction *models.Transaction) error
 	AccountStatusUpdate(account *models.Account) error
+	GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error)
 }
 type accountRepository struct {
 	db *gorm.DB
@@ -30,6 +32,39 @@ func NewAccountRepository(db *gorm.DB) AccountRepository {
 		db: db,
 	}
 
+}
+func (r *accountRepository) GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error) {
+	var todayCount, weekCount, thisMonthCount, totalCount int64
+	if err := r.db.
+		Model(&models.Transaction{}).
+		Where("(from_account= ? OR to_account= ?) AND DATE(created_at)= CURDATE()", accountNo, accountNo).
+		Count(&todayCount).Error; err != nil {
+		return nil, err
+	}
+	if err := r.db.
+		Model(&models.Transaction{}).
+		Where("(from_account= ? OR to_account= ?) AND YEARWEEK(created_at, 1)= YEARWEEK(CURDATE(), 1)", accountNo, accountNo).
+		Count(&weekCount).Error; err != nil {
+		return nil, err
+	}
+	if err := r.db.
+		Model(&models.Transaction{}).
+		Where("(from_account= ? OR to_account= ?) AND YEAR(created_at)= YEAR(CURDATE()) AND MONTH(created_at)= MONTH(CURDATE())", accountNo, accountNo).
+		Count(&thisMonthCount).Error; err != nil {
+		return nil, err
+	}
+	if err := r.db.Model(&models.Transaction{}).Where("from_account= ? OR to_account= ?", accountNo, accountNo).
+		Count(&totalCount).Error; err != nil {
+		return nil, err
+	}
+
+	return &dto.TransactionStatistics{
+		AccountNo:            accountNo,
+		TodayTransaction:     todayCount,
+		ThisWeekTransaction:  weekCount,
+		ThisMonthTransaction: thisMonthCount,
+		TotalTransaction:     totalCount,
+	}, nil
 }
 func (r *accountRepository) Create(account *models.Account) error {
 	return r.db.Create(account).Error

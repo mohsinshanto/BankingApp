@@ -25,6 +25,7 @@ type AccountService interface {
 	MoneyTransfer(transferInput *dto.TransferInput) (*dto.TransferResponse, error)
 	AccountDetails(accountNo string) (*dto.AccountDetails, error)
 	AccountStatusUpdate(accountNo, status string) (*models.Account, error)
+	GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error)
 }
 type accountService struct {
 	repo repositories.AccountRepository
@@ -34,6 +35,14 @@ func NewAccountService(repo repositories.AccountRepository) AccountService {
 	return &accountService{
 		repo: repo,
 	}
+}
+func (s *accountService) GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error) {
+	_, err := s.repo.FindByAccountNo(accountNo)
+	if err != nil {
+		return nil, err
+	}
+	return s.repo.GetTransactionStat(accountNo)
+
 }
 func (s *accountService) CreateAccount(userID uint) (*models.Account, error) {
 	existingAccount, err := s.repo.FindByUserID(userID)

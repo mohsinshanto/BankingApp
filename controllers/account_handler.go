@@ -155,3 +155,17 @@ func (ac *AccountController) AccountStatusUpdate(c *gin.Context) {
 	}
 	response.Success(c, http.StatusOK, "Account status Updated", account)
 }
+func (ac *AccountController) GetTransactionStatistics(c *gin.Context) {
+	accountNo := c.Param("accountNo")
+	result, err := ac.service.GetTransactionStat(accountNo)
+	if err != nil {
+		switch {
+		case errors.Is(err, appError.ErrAccountNotFound):
+			response.Error(c, http.StatusNotFound, err.Error())
+		default:
+			response.Error(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	response.Success(c, http.StatusOK, "transaction retrieved successfully", result)
+}

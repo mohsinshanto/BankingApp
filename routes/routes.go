@@ -23,8 +23,8 @@ func RouteHandler(r *gin.Engine, accountController *controllers.AccountControlle
 		account.GET("/:accountNo/details", accountController.AccountDetails)
 		account.GET("/transaction/:accountNo", controllers.GetTransactionsByAccount)
 		account.GET("/:accountNo/summary", controllers.GetAccountSummary)
-		account.GET("/:accountNo/stat", controllers.GetTransactionStatistics)
-		account.PATCH("/:accountNo/status", controllers.AccountStatusUpdate)
+		account.GET("/:accountNo/stat", accountController.GetTransactionStatistics)
+		account.PATCH("/:accountNo/status", accountController.AccountStatusUpdate)
 	}
 
 }
