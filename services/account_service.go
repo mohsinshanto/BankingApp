@@ -7,7 +7,9 @@ import (
 	"banking/repositories"
 	"banking/utils"
 	"errors"
+	"strconv"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -27,6 +29,7 @@ type AccountService interface {
 	AccountStatusUpdate(accountNo, status string) (*models.Account, error)
 	GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error)
 	GetAccountSummary(accountNo string) (*dto.AccountSummaryResponse, error)
+	GetTransactionsByAccount(accountNo string, filter *dto.TransactionFilter) (*dto.TransactionListResponse, error)
 }
 type accountService struct {
 	repo repositories.AccountRepository
@@ -36,6 +39,94 @@ func NewAccountService(repo repositories.AccountRepository) AccountService {
 	return &accountService{
 		repo: repo,
 	}
+}
+func (s *accountService) GetTransactionsByAccount(accountNo string, filter *dto.TransactionFilter) (*dto.TransactionListResponse, error) {
+	page, err := strconv.Atoi(filter.Page)
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(filter.Limit)
+	if err != nil || limit < 1 {
+		limit = 2
+	}
+
+	if limit > 100 {
+		limit = 100
+	}
+	filter.TransactionType = strings.ToUpper(filter.TransactionType)
+
+	if filter.TransactionType != "" {
+		switch filter.TransactionType {
+		case "DEPOSIT", "WITHDRAW", "TRANSFER":
+		default:
+			return nil, appError.ErrInvalidTransactionType
+		}
+	}
+	var fromTime time.Time
+	var toTime time.Time
+
+	if filter.FromDate != "" {
+		fromTime, err = time.Parse("2006-01-02", filter.FromDate)
+		if err != nil {
+			return nil, appError.ErrInvalidDate
+		}
+	}
+
+	if filter.ToDate != "" {
+		toTime, err = time.Parse("2006-01-02", filter.ToDate)
+		if err != nil {
+			return nil, appError.ErrInvalidDate
+		}
+	}
+	if !fromTime.IsZero() && !toTime.IsZero() && fromTime.After(toTime) {
+		return nil, appError.ErrInvalidDateRange
+	}
+
+	filter.From = fromTime
+
+	if !toTime.IsZero() {
+		filter.To = toTime.Add(24*time.Hour - time.Nanosecond)
+	}
+	filter.SortBy = strings.ToLower(filter.SortBy)
+	switch filter.SortBy {
+	case "", "newest":
+		filter.OrderBy = "created_at DESC"
+
+	case "oldest":
+		filter.OrderBy = "created_at ASC"
+
+	case "amount_asc":
+		filter.OrderBy = "amount ASC"
+
+	case "amount_desc":
+		filter.OrderBy = "amount DESC"
+
+	default:
+		return nil, appError.ErrInvalidSortOption
+	}
+	filter.Offset = (page - 1) * limit
+	filter.PageNo = page
+	filter.PageSize = limit
+
+	_, err = s.repo.FindByAccountNo(accountNo)
+	if err != nil {
+		return nil, err
+	}
+	result, err := s.repo.GetTransactionsByAccount(accountNo, filter)
+	if err != nil {
+		return nil, err
+	}
+	totalPages := (result.Total + int64(limit) - 1) / int64(limit)
+
+	return &dto.TransactionListResponse{
+		AccountNo:         accountNo,
+		CurrentPage:       page,
+		Limit:             limit,
+		TotalPages:        totalPages,
+		TotalTransactions: result.Total,
+		Transactions:      result.Transactions,
+	}, nil
+
 }
 func (s *accountService) GetAccountSummary(accountNo string) (*dto.AccountSummaryResponse, error) {
 	account, err := s.repo.FindByAccountNo(accountNo)

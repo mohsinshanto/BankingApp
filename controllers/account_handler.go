@@ -183,3 +183,34 @@ func (ac *AccountController) GetAccountSummary(c *gin.Context) {
 	}
 	response.Success(c, http.StatusOK, "here is the summary", result)
 }
+func (ac *AccountController) GetTransactionsByAccount(c *gin.Context) {
+	accountNo := c.Param("accountNo")
+
+	filter := dto.TransactionFilter{
+		Page:            c.DefaultQuery("page", "1"),
+		Limit:           c.DefaultQuery("limit", "5"),
+		TransactionType: c.Query("type"),
+		FromDate:        c.Query("from"),
+		ToDate:          c.Query("to"),
+		SortBy:          c.DefaultQuery("sort", "newest"),
+	}
+
+	result, err := ac.service.GetTransactionsByAccount(accountNo, &filter)
+	if err != nil {
+		switch {
+		case errors.Is(err, appError.ErrAccountNotFound):
+			response.Error(c, http.StatusNotFound, err.Error())
+		case errors.Is(err, appError.ErrInvalidTransactionType),
+			errors.Is(err, appError.ErrInvalidDate),
+			errors.Is(err, appError.ErrInvalidDateRange),
+			errors.Is(err, appError.ErrInvalidSortOption):
+			response.Error(c, http.StatusBadRequest, err.Error())
+
+		default:
+			response.Error(c, http.StatusInternalServerError, err.Error())
+
+		}
+		return
+	}
+	response.Success(c, http.StatusOK, "transaction retrieved successfully", result)
+}

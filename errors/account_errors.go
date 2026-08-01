@@ -12,4 +12,8 @@ var (
 	ErrSameAccountTransfer      = errors.New("cannot transfer to the same account")
 	ErrSenderAccountNotActive   = errors.New("sender account is not active")
 	ErrReceiverAccountNotActive = errors.New("receiver account is not active")
+	ErrInvalidTransactionType   = errors.New("invalid transaction type")
+	ErrInvalidDate              = errors.New("invalid date (YYYY-MM-DD) expected")
+	ErrInvalidDateRange         = errors.New("invalid date range")
+	ErrInvalidSortOption        = errors.New("invalid sorting option")
 )

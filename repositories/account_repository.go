@@ -22,6 +22,7 @@ type AccountRepository interface {
 	AccountStatusUpdate(account *models.Account) error
 	GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error)
 	GetAccountSummary(accountNo string) (*dto.AccountSummary, error)
+	GetTransactionsByAccount(accountNo string, filter *dto.TransactionFilter) (*dto.TransactionQueryResult, error)
 }
 type accountRepository struct {
 	db *gorm.DB
@@ -33,6 +34,47 @@ func NewAccountRepository(db *gorm.DB) AccountRepository {
 		db: db,
 	}
 
+}
+func (r *accountRepository) GetTransactionsByAccount(accountNo string, filter *dto.TransactionFilter) (*dto.TransactionQueryResult, error) {
+	query := r.db.Model(&models.Transaction{})
+
+	query = query.Where(
+		"from_account = ? OR to_account = ?",
+		accountNo,
+		accountNo,
+	)
+
+	if filter.TransactionType != "" {
+		query = query.Where("type = ?", filter.TransactionType)
+	}
+
+	if !filter.From.IsZero() {
+		query = query.Where("created_at >= ?", filter.From)
+	}
+
+	if !filter.To.IsZero() {
+		query = query.Where("created_at <= ?", filter.To)
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, err
+	}
+
+	var transactions []models.Transaction
+
+	if err := query.
+		Order(filter.OrderBy).
+		Limit(filter.PageSize).
+		Offset(filter.Offset).
+		Find(&transactions).Error; err != nil {
+		return nil, err
+	}
+
+	return &dto.TransactionQueryResult{
+		Total:        total,
+		Transactions: transactions,
+	}, nil
 }
 func (r *accountRepository) GetAccountSummary(accountNo string) (*dto.AccountSummary, error) {
 	var totalDeposit, totalWithdraw, totalTransferSent, totalTransferReceived float64
