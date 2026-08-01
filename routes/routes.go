@@ -21,8 +21,8 @@ func RouteHandler(r *gin.Engine, accountController *controllers.AccountControlle
 		account.POST("/withdraw", accountController.Withdraw)
 		account.POST("/transfer", accountController.MoneyTransfer)
 		account.GET("/:accountNo/details", accountController.AccountDetails)
-		account.GET("/transaction/:accountNo", controllers.GetTransactionsByAccount)
-		account.GET("/:accountNo/summary", controllers.GetAccountSummary)
+		account.GET("/transaction/:accountNo", accountController.GetTransactionsByAccount)
+		account.GET("/:accountNo/summary", accountController.GetAccountSummary)
 		account.GET("/:accountNo/stat", accountController.GetTransactionStatistics)
 		account.PATCH("/:accountNo/status", accountController.AccountStatusUpdate)
 	}

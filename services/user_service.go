@@ -1,6 +1,7 @@
 package services
 
 import (
+	"banking/config"
 	"banking/dto"
 	appError "banking/errors"
 	"banking/models"
@@ -10,8 +11,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
-
-var JwtSecret = []byte("mohsin5702shanto")
 
 type UserService interface {
 	Register(input *dto.RegistrationInput) error
@@ -56,7 +55,7 @@ func (s *userService) Login(input *dto.LoginInput) (string, error) {
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(JwtSecret)
+	tokenString, err := token.SignedString(config.JwtSecret)
 	if err != nil {
 		return "", err
 	}

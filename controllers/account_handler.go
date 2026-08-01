@@ -21,7 +21,7 @@ func NewAccountController(service services.AccountService) *AccountController {
 	}
 }
 func (ac *AccountController) CreateAccount(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("user-id")
 	if !exists {
 		response.Error(c, http.StatusUnauthorized, "unauthorized")
 		return

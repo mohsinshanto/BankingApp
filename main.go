@@ -1,6 +1,7 @@
 package main
 
 import (
+	"banking/config"
 	"banking/controllers"
 	"banking/database"
 	"banking/models"
@@ -8,11 +9,13 @@ import (
 	"banking/routes"
 	"banking/services"
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	config.LoadEnv()
 	if err := database.ConnectDB(); err != nil {
 		log.Fatal(err)
 	}
@@ -29,6 +32,12 @@ func main() {
 	userController := controllers.NewUserController(userService)
 	router := gin.Default()
 	routes.RouteHandler(router, accountController, userController)
-	router.Run()
+	port := os.Getenv("SERVER_PORT")
+	if port == "" {
+		port = "8080"
+	}
+	if err := router.Run(":" + port); err != nil {
+		log.Fatal(err)
+	}
 
 }
