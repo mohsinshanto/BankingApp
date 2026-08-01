@@ -26,11 +26,12 @@ func (ac *AccountController) CreateAccount(c *gin.Context) {
 		response.Error(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
-	id, ok := userID.(uint)
+	idFloat, ok := userID.(float64)
 	if !ok {
 		response.Error(c, http.StatusInternalServerError, "invalid user id type")
 		return
 	}
+	id := uint(idFloat)
 	account, err := ac.service.CreateAccount(id)
 	if err != nil {
 		switch {

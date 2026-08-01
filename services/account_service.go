@@ -157,9 +157,14 @@ func (s *accountService) GetTransactionStat(accountNo string) (*dto.TransactionS
 
 }
 func (s *accountService) CreateAccount(userID uint) (*models.Account, error) {
-	existingAccount, err := s.repo.FindByUserID(userID)
-	if err == nil && existingAccount != nil {
+	_, err := s.repo.FindByUserID(userID)
+
+	if err == nil {
 		return nil, appError.ErrAccountAlreadyExists
+	}
+
+	if !errors.Is(err, appError.ErrAccountNotFound) {
+		return nil, err
 	}
 	accountNo, err := s.getUniqueAccountNumber()
 	if err != nil {
@@ -345,7 +350,7 @@ func (s *accountService) getUniqueAccountNumber() (string, error) {
 			return "", err
 		}
 		_, err = s.repo.FindByAccountNo(accountNO)
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, appError.ErrAccountNotFound) {
 			return accountNO, nil
 		}
 		if err != nil {

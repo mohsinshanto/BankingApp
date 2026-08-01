@@ -147,6 +147,9 @@ func (r *accountRepository) FindByUserID(userID uint) (*models.Account, error) {
 	var account models.Account
 	err := r.db.Where("user_id=?", userID).Take(&account).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, appError.ErrAccountNotFound
+		}
 		return nil, err
 	}
 	return &account, nil
