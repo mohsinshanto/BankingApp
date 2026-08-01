@@ -32,7 +32,7 @@ func (ac *AccountController) CreateAccount(c *gin.Context) {
 		return
 	}
 	id := uint(idFloat)
-	account, err := ac.service.CreateAccount(id)
+	result, err := ac.service.CreateAccount(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, appError.ErrAccountAlreadyExists):
@@ -43,7 +43,7 @@ func (ac *AccountController) CreateAccount(c *gin.Context) {
 		}
 		return
 	}
-	response.Success(c, http.StatusCreated, "account created successfully", account)
+	response.Success(c, http.StatusCreated, "account created successfully", result)
 }
 func (ac *AccountController) Deposit(c *gin.Context) {
 	var inputDepo dto.Deposit
@@ -51,21 +51,20 @@ func (ac *AccountController) Deposit(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	account, err := ac.service.Deposit(inputDepo.AccountNo, inputDepo.Amount)
+	result, err := ac.service.Deposit(inputDepo.AccountNo, inputDepo.Amount)
 	if err != nil {
 		switch {
 		case errors.Is(err, appError.ErrAccountNotFound):
 			response.Error(c, http.StatusNotFound, err.Error())
-		case errors.Is(err, appError.ErrInvalidStatus):
-			response.Error(c, http.StatusBadRequest, err.Error())
-		case errors.Is(err, appError.ErrInvalidAmount):
+		case errors.Is(err, appError.ErrInvalidStatus),
+			errors.Is(err, appError.ErrInvalidAmount):
 			response.Error(c, http.StatusBadRequest, err.Error())
 		default:
 			response.Error(c, http.StatusInternalServerError, err.Error())
 		}
 		return
 	}
-	response.Success(c, http.StatusOK, "money deposited successfully", account)
+	response.Success(c, http.StatusOK, "money deposited successfully", result)
 }
 func (ac *AccountController) Withdraw(c *gin.Context) {
 	var inputWithdraw dto.Withdraw
@@ -73,23 +72,21 @@ func (ac *AccountController) Withdraw(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	account, err := ac.service.Withdraw(inputWithdraw.AccountNo, inputWithdraw.Amount)
+	result, err := ac.service.Withdraw(inputWithdraw.AccountNo, inputWithdraw.Amount)
 	if err != nil {
 		switch {
 		case errors.Is(err, appError.ErrAccountNotFound):
 			response.Error(c, http.StatusNotFound, err.Error())
-		case errors.Is(err, appError.ErrInvalidStatus):
-			response.Error(c, http.StatusBadRequest, err.Error())
-		case errors.Is(err, appError.ErrInvalidAmount):
-			response.Error(c, http.StatusBadRequest, err.Error())
-		case errors.Is(err, appError.ErrInsufficientBalance):
+		case errors.Is(err, appError.ErrInvalidStatus),
+			errors.Is(err, appError.ErrInvalidAmount),
+			errors.Is(err, appError.ErrInsufficientBalance):
 			response.Error(c, http.StatusBadRequest, err.Error())
 		default:
 			response.Error(c, http.StatusInternalServerError, err.Error())
 		}
 		return
 	}
-	response.Success(c, http.StatusOK, "money withdrawn successfully", account)
+	response.Success(c, http.StatusOK, "money withdrawn successfully", result)
 
 }
 func (ac *AccountController) MoneyTransfer(c *gin.Context) {
@@ -103,13 +100,10 @@ func (ac *AccountController) MoneyTransfer(c *gin.Context) {
 		switch {
 		case errors.Is(err, appError.ErrAccountNotFound):
 			response.Error(c, http.StatusNotFound, err.Error())
-		case errors.Is(err, appError.ErrSameAccountTransfer):
-			response.Error(c, http.StatusBadRequest, err.Error())
-		case errors.Is(err, appError.ErrSenderAccountNotActive):
-			response.Error(c, http.StatusBadRequest, err.Error())
-		case errors.Is(err, appError.ErrReceiverAccountNotActive):
-			response.Error(c, http.StatusBadRequest, err.Error())
-		case errors.Is(err, appError.ErrInsufficientBalance):
+		case errors.Is(err, appError.ErrSameAccountTransfer),
+			errors.Is(err, appError.ErrSenderAccountNotActive),
+			errors.Is(err, appError.ErrReceiverAccountNotActive),
+			errors.Is(err, appError.ErrInsufficientBalance):
 			response.Error(c, http.StatusBadRequest, err.Error())
 		default:
 			response.Error(c, http.StatusInternalServerError, err.Error())
@@ -140,21 +134,20 @@ func (ac *AccountController) AccountStatusUpdate(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	account, err := ac.service.AccountStatusUpdate(accountNo, status.Status)
+	result, err := ac.service.AccountStatusUpdate(accountNo, status.Status)
 	if err != nil {
 		switch {
 		case errors.Is(err, appError.ErrAccountNotFound):
 			response.Error(c, http.StatusNotFound, err.Error())
-		case errors.Is(err, appError.ErrStatusAlreadySet):
-			response.Error(c, http.StatusBadRequest, err.Error())
-		case errors.Is(err, appError.ErrInvalidStatus):
+		case errors.Is(err, appError.ErrStatusAlreadySet),
+			errors.Is(err, appError.ErrInvalidStatus):
 			response.Error(c, http.StatusBadRequest, err.Error())
 		default:
 			response.Error(c, http.StatusInternalServerError, err.Error())
 		}
 		return
 	}
-	response.Success(c, http.StatusOK, "Account status Updated", account)
+	response.Success(c, http.StatusOK, "Account status Updated", result)
 }
 func (ac *AccountController) GetTransactionStatistics(c *gin.Context) {
 	accountNo := c.Param("accountNo")

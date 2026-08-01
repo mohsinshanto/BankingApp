@@ -21,12 +21,12 @@ var validAccountStatus = map[string]bool{
 }
 
 type AccountService interface {
-	CreateAccount(userID uint) (*models.Account, error)
-	Deposit(accountNo string, amount float64) (*models.Account, error)
-	Withdraw(accountNo string, amount float64) (*models.Account, error)
+	CreateAccount(userID uint) (*dto.AccountResponse, error)
+	Deposit(accountNo string, amount float64) (*dto.DepositResponse, error)
+	Withdraw(accountNo string, amount float64) (*dto.WithdrawResponse, error)
 	MoneyTransfer(transferInput *dto.TransferInput) (*dto.TransferResponse, error)
 	AccountDetails(accountNo string) (*dto.AccountDetails, error)
-	AccountStatusUpdate(accountNo, status string) (*models.Account, error)
+	AccountStatusUpdate(accountNo, status string) (*dto.AccountStatusUpdateResponse, error)
 	GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error)
 	GetAccountSummary(accountNo string) (*dto.AccountSummaryResponse, error)
 	GetTransactionsByAccount(accountNo string, filter *dto.TransactionFilter) (*dto.TransactionListResponse, error)
@@ -156,7 +156,7 @@ func (s *accountService) GetTransactionStat(accountNo string) (*dto.TransactionS
 	return s.repo.GetTransactionStat(accountNo)
 
 }
-func (s *accountService) CreateAccount(userID uint) (*models.Account, error) {
+func (s *accountService) CreateAccount(userID uint) (*dto.AccountResponse, error) {
 	_, err := s.repo.FindByUserID(userID)
 
 	if err == nil {
@@ -177,9 +177,13 @@ func (s *accountService) CreateAccount(userID uint) (*models.Account, error) {
 	if err := s.repo.Create(account); err != nil {
 		return nil, err
 	}
-	return account, nil
+	return &dto.AccountResponse{
+		AccountNo: account.AccountNo,
+		Balance:   account.Balance,
+		Status:    account.Status,
+	}, nil
 }
-func (s *accountService) Deposit(accountNo string, amount float64) (*models.Account, error) {
+func (s *accountService) Deposit(accountNo string, amount float64) (*dto.DepositResponse, error) {
 	if amount <= 0 {
 		return nil, appError.ErrInvalidAmount
 	}
@@ -206,10 +210,15 @@ func (s *accountService) Deposit(accountNo string, amount float64) (*models.Acco
 	if err := tx.Commit().Error; err != nil {
 		return nil, err
 	}
-	return account, nil
+	return &dto.DepositResponse{
+		AccountNo: account.AccountNo,
+		Balance:   account.Balance,
+		Amount:    amount,
+		Status:    account.Status,
+	}, nil
 
 }
-func (s *accountService) Withdraw(accountNo string, amount float64) (*models.Account, error) {
+func (s *accountService) Withdraw(accountNo string, amount float64) (*dto.WithdrawResponse, error) {
 	if amount <= 0 {
 		return nil, appError.ErrInvalidAmount
 	}
@@ -238,7 +247,12 @@ func (s *accountService) Withdraw(accountNo string, amount float64) (*models.Acc
 	if err := tx.Commit().Error; err != nil {
 		return nil, err
 	}
-	return account, nil
+	return &dto.WithdrawResponse{
+		AccountNo: account.AccountNo,
+		Balance:   account.Balance,
+		Amount:    amount,
+		Status:    account.Status,
+	}, nil
 
 }
 func (s *accountService) MoneyTransfer(transferInput *dto.TransferInput) (*dto.TransferResponse, error) {
@@ -309,7 +323,7 @@ func (s *accountService) AccountDetails(accountNo string) (*dto.AccountDetails, 
 	}, nil
 
 }
-func (s *accountService) AccountStatusUpdate(accountNo, status string) (*models.Account, error) {
+func (s *accountService) AccountStatusUpdate(accountNo, status string) (*dto.AccountStatusUpdateResponse, error) {
 	status = strings.ToUpper(status)
 	if _, ok := validAccountStatus[status]; !ok {
 		return nil, appError.ErrInvalidStatus
@@ -326,7 +340,10 @@ func (s *accountService) AccountStatusUpdate(accountNo, status string) (*models.
 	if err := s.repo.AccountStatusUpdate(account); err != nil {
 		return nil, err
 	}
-	return account, nil
+	return &dto.AccountStatusUpdateResponse{
+		AccountNo: account.AccountNo,
+		Status:    account.Status,
+	}, nil
 
 }
 
