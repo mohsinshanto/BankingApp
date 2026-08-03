@@ -2,7 +2,6 @@ package main
 
 import (
 	"banking/config"
-	"banking/database"
 	"banking/internal/account"
 	"banking/internal/user"
 	"banking/models"
@@ -14,16 +13,16 @@ import (
 
 func main() {
 	config.LoadEnv()
-	if err := database.ConnectDB(); err != nil {
+	if err := config.ConnectDB(); err != nil {
 		log.Fatal(err)
 	}
-	if err := database.DB.AutoMigrate(&models.User{}, &models.Account{}, &models.Transaction{}); err != nil {
+	if err := config.DB.AutoMigrate(&models.User{}, &models.Account{}, &models.Transaction{}); err != nil {
 		log.Fatal(err)
 	}
 	// account dependency module injection
-	accountModule := account.NewModule(database.DB)
+	accountModule := account.NewModule(config.DB)
 	// user dependency module injection
-	userModule := user.NewModule(database.DB)
+	userModule := user.NewModule(config.DB)
 	router := gin.Default()
 	userModule.RegisterRoutes(router)
 	accountModule.RegisterRoutes(router)
