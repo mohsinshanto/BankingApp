@@ -1,10 +1,9 @@
-package controllers
+package user
 
 import (
-	"banking/dto"
 	appError "banking/errors"
-	"banking/response"
-	"banking/services"
+	"banking/utils/response"
+
 	"errors"
 	"net/http"
 
@@ -12,16 +11,16 @@ import (
 )
 
 type UserController struct {
-	service services.UserService
+	service UserService
 }
 
-func NewUserController(service services.UserService) *UserController {
+func NewUserController(service UserService) *UserController {
 	return &UserController{
 		service: service,
 	}
 }
 func (uc *UserController) Register(c *gin.Context) {
-	var registrationInput dto.RegistrationInput
+	var registrationInput RegistrationInput
 	if err := c.ShouldBindJSON(&registrationInput); err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
@@ -34,7 +33,7 @@ func (uc *UserController) Register(c *gin.Context) {
 	response.Success(c, http.StatusCreated, "new user created", " data is saved")
 }
 func (uc *UserController) Login(c *gin.Context) {
-	var loginInput dto.LoginInput
+	var loginInput LoginInput
 	if err := c.ShouldBindJSON(&loginInput); err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return

@@ -1,4 +1,4 @@
-package dto
+package user
 
 type RegistrationInput struct {
 	Name     string `json:"name" binding:"required"`

@@ -1,10 +1,9 @@
-package controllers
+package account
 
 import (
-	"banking/dto"
 	appError "banking/errors"
-	"banking/response"
-	"banking/services"
+	"banking/utils/response"
+
 	"errors"
 	"net/http"
 
@@ -12,10 +11,10 @@ import (
 )
 
 type AccountController struct {
-	service services.AccountService
+	service AccountService
 }
 
-func NewAccountController(service services.AccountService) *AccountController {
+func NewAccountController(service AccountService) *AccountController {
 	return &AccountController{
 		service: service,
 	}
@@ -46,7 +45,7 @@ func (ac *AccountController) CreateAccount(c *gin.Context) {
 	response.Success(c, http.StatusCreated, "account created successfully", result)
 }
 func (ac *AccountController) Deposit(c *gin.Context) {
-	var inputDepo dto.Deposit
+	var inputDepo Deposit
 	if err := c.ShouldBindJSON(&inputDepo); err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
@@ -67,7 +66,7 @@ func (ac *AccountController) Deposit(c *gin.Context) {
 	response.Success(c, http.StatusOK, "money deposited successfully", result)
 }
 func (ac *AccountController) Withdraw(c *gin.Context) {
-	var inputWithdraw dto.Withdraw
+	var inputWithdraw Withdraw
 	if err := c.ShouldBindJSON(&inputWithdraw); err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
@@ -90,7 +89,7 @@ func (ac *AccountController) Withdraw(c *gin.Context) {
 
 }
 func (ac *AccountController) MoneyTransfer(c *gin.Context) {
-	var transferInput dto.TransferInput
+	var transferInput TransferInput
 	if err := c.ShouldBindJSON(&transferInput); err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
@@ -129,7 +128,7 @@ func (ac *AccountController) AccountDetails(c *gin.Context) {
 }
 func (ac *AccountController) AccountStatusUpdate(c *gin.Context) {
 	accountNo := c.Param("accountNo")
-	var status dto.AccountStatusUpdate
+	var status AccountStatusUpdate
 	if err := c.ShouldBindJSON(&status); err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
@@ -180,7 +179,7 @@ func (ac *AccountController) GetAccountSummary(c *gin.Context) {
 func (ac *AccountController) GetTransactionsByAccount(c *gin.Context) {
 	accountNo := c.Param("accountNo")
 
-	filter := dto.TransactionFilter{
+	filter := TransactionFilter{
 		Page:            c.DefaultQuery("page", "1"),
 		Limit:           c.DefaultQuery("limit", "5"),
 		TransactionType: c.Query("type"),

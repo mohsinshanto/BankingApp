@@ -1,4 +1,4 @@
-package repositories
+package user
 
 import (
 	"banking/models"

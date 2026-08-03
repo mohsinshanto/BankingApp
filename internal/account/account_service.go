@@ -1,10 +1,9 @@
-package services
+package account
 
 import (
-	"banking/dto"
 	appError "banking/errors"
 	"banking/models"
-	"banking/repositories"
+
 	"banking/utils"
 	"errors"
 	"strconv"
@@ -21,26 +20,26 @@ var validAccountStatus = map[string]bool{
 }
 
 type AccountService interface {
-	CreateAccount(userID uint) (*dto.AccountResponse, error)
-	Deposit(accountNo string, amount float64) (*dto.DepositResponse, error)
-	Withdraw(accountNo string, amount float64) (*dto.WithdrawResponse, error)
-	MoneyTransfer(transferInput *dto.TransferInput) (*dto.TransferResponse, error)
-	AccountDetails(accountNo string) (*dto.AccountDetails, error)
-	AccountStatusUpdate(accountNo, status string) (*dto.AccountStatusUpdateResponse, error)
-	GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error)
-	GetAccountSummary(accountNo string) (*dto.AccountSummaryResponse, error)
-	GetTransactionsByAccount(accountNo string, filter *dto.TransactionFilter) (*dto.TransactionListResponse, error)
+	CreateAccount(userID uint) (*AccountResponse, error)
+	Deposit(accountNo string, amount float64) (*DepositResponse, error)
+	Withdraw(accountNo string, amount float64) (*WithdrawResponse, error)
+	MoneyTransfer(transferInput *TransferInput) (*TransferResponse, error)
+	AccountDetails(accountNo string) (*AccountDetails, error)
+	AccountStatusUpdate(accountNo, status string) (*AccountStatusUpdateResponse, error)
+	GetTransactionStat(accountNo string) (*TransactionStatistics, error)
+	GetAccountSummary(accountNo string) (*AccountSummaryResponse, error)
+	GetTransactionsByAccount(accountNo string, filter *TransactionFilter) (*TransactionListResponse, error)
 }
 type accountService struct {
-	repo repositories.AccountRepository
+	repo AccountRepository
 }
 
-func NewAccountService(repo repositories.AccountRepository) AccountService {
+func NewAccountService(repo AccountRepository) AccountService {
 	return &accountService{
 		repo: repo,
 	}
 }
-func (s *accountService) GetTransactionsByAccount(accountNo string, filter *dto.TransactionFilter) (*dto.TransactionListResponse, error) {
+func (s *accountService) GetTransactionsByAccount(accountNo string, filter *TransactionFilter) (*TransactionListResponse, error) {
 	page, err := strconv.Atoi(filter.Page)
 	if err != nil || page < 1 {
 		page = 1
@@ -118,7 +117,7 @@ func (s *accountService) GetTransactionsByAccount(accountNo string, filter *dto.
 	}
 	totalPages := (result.Total + int64(limit) - 1) / int64(limit)
 
-	return &dto.TransactionListResponse{
+	return &TransactionListResponse{
 		AccountNo:         accountNo,
 		CurrentPage:       page,
 		Limit:             limit,
@@ -128,7 +127,7 @@ func (s *accountService) GetTransactionsByAccount(accountNo string, filter *dto.
 	}, nil
 
 }
-func (s *accountService) GetAccountSummary(accountNo string) (*dto.AccountSummaryResponse, error) {
+func (s *accountService) GetAccountSummary(accountNo string) (*AccountSummaryResponse, error) {
 	account, err := s.repo.FindByAccountNo(accountNo)
 	if err != nil {
 		return nil, err
@@ -138,7 +137,7 @@ func (s *accountService) GetAccountSummary(accountNo string) (*dto.AccountSummar
 	if err != nil {
 		return nil, err
 	}
-	return &dto.AccountSummaryResponse{
+	return &AccountSummaryResponse{
 		AccountNo:             accountNo,
 		CurrentBalance:        currentBalance,
 		TotalTransactions:     result.TotalTransactions,
@@ -148,7 +147,7 @@ func (s *accountService) GetAccountSummary(accountNo string) (*dto.AccountSummar
 		TotalTransferReceived: result.TotalTransferReceived,
 	}, nil
 }
-func (s *accountService) GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error) {
+func (s *accountService) GetTransactionStat(accountNo string) (*TransactionStatistics, error) {
 	_, err := s.repo.FindByAccountNo(accountNo)
 	if err != nil {
 		return nil, err
@@ -156,7 +155,7 @@ func (s *accountService) GetTransactionStat(accountNo string) (*dto.TransactionS
 	return s.repo.GetTransactionStat(accountNo)
 
 }
-func (s *accountService) CreateAccount(userID uint) (*dto.AccountResponse, error) {
+func (s *accountService) CreateAccount(userID uint) (*AccountResponse, error) {
 	_, err := s.repo.FindByUserID(userID)
 
 	if err == nil {
@@ -177,13 +176,13 @@ func (s *accountService) CreateAccount(userID uint) (*dto.AccountResponse, error
 	if err := s.repo.Create(account); err != nil {
 		return nil, err
 	}
-	return &dto.AccountResponse{
+	return &AccountResponse{
 		AccountNo: account.AccountNo,
 		Balance:   account.Balance,
 		Status:    account.Status,
 	}, nil
 }
-func (s *accountService) Deposit(accountNo string, amount float64) (*dto.DepositResponse, error) {
+func (s *accountService) Deposit(accountNo string, amount float64) (*DepositResponse, error) {
 	if amount <= 0 {
 		return nil, appError.ErrInvalidAmount
 	}
@@ -210,7 +209,7 @@ func (s *accountService) Deposit(accountNo string, amount float64) (*dto.Deposit
 	if err := tx.Commit().Error; err != nil {
 		return nil, err
 	}
-	return &dto.DepositResponse{
+	return &DepositResponse{
 		AccountNo: account.AccountNo,
 		Balance:   account.Balance,
 		Amount:    amount,
@@ -218,7 +217,7 @@ func (s *accountService) Deposit(accountNo string, amount float64) (*dto.Deposit
 	}, nil
 
 }
-func (s *accountService) Withdraw(accountNo string, amount float64) (*dto.WithdrawResponse, error) {
+func (s *accountService) Withdraw(accountNo string, amount float64) (*WithdrawResponse, error) {
 	if amount <= 0 {
 		return nil, appError.ErrInvalidAmount
 	}
@@ -247,7 +246,7 @@ func (s *accountService) Withdraw(accountNo string, amount float64) (*dto.Withdr
 	if err := tx.Commit().Error; err != nil {
 		return nil, err
 	}
-	return &dto.WithdrawResponse{
+	return &WithdrawResponse{
 		AccountNo: account.AccountNo,
 		Balance:   account.Balance,
 		Amount:    amount,
@@ -255,7 +254,7 @@ func (s *accountService) Withdraw(accountNo string, amount float64) (*dto.Withdr
 	}, nil
 
 }
-func (s *accountService) MoneyTransfer(transferInput *dto.TransferInput) (*dto.TransferResponse, error) {
+func (s *accountService) MoneyTransfer(transferInput *TransferInput) (*TransferResponse, error) {
 	if transferInput.Amount <= 0 {
 		return nil, appError.ErrInvalidAmount
 	}
@@ -301,19 +300,19 @@ func (s *accountService) MoneyTransfer(transferInput *dto.TransferInput) (*dto.T
 	if err := tx.Commit().Error; err != nil {
 		return nil, err
 	}
-	return &dto.TransferResponse{
+	return &TransferResponse{
 		SenderAccountNo:   senderAccount.AccountNo,
 		ReceiverAccountNo: receiverAccount.AccountNo,
 		TransferAmount:    transferInput.Amount,
 		SenderNewBalance:  senderAccount.Balance,
 	}, nil
 }
-func (s *accountService) AccountDetails(accountNo string) (*dto.AccountDetails, error) {
+func (s *accountService) AccountDetails(accountNo string) (*AccountDetails, error) {
 	account, err := s.repo.FindAccountDetails(accountNo)
 	if err != nil {
 		return nil, err
 	}
-	return &dto.AccountDetails{
+	return &AccountDetails{
 		AccountNo: account.AccountNo,
 		Balance:   account.Balance,
 		Status:    account.Status,
@@ -323,7 +322,7 @@ func (s *accountService) AccountDetails(accountNo string) (*dto.AccountDetails, 
 	}, nil
 
 }
-func (s *accountService) AccountStatusUpdate(accountNo, status string) (*dto.AccountStatusUpdateResponse, error) {
+func (s *accountService) AccountStatusUpdate(accountNo, status string) (*AccountStatusUpdateResponse, error) {
 	status = strings.ToUpper(status)
 	if _, ok := validAccountStatus[status]; !ok {
 		return nil, appError.ErrInvalidStatus
@@ -340,7 +339,7 @@ func (s *accountService) AccountStatusUpdate(accountNo, status string) (*dto.Acc
 	if err := s.repo.AccountStatusUpdate(account); err != nil {
 		return nil, err
 	}
-	return &dto.AccountStatusUpdateResponse{
+	return &AccountStatusUpdateResponse{
 		AccountNo: account.AccountNo,
 		Status:    account.Status,
 	}, nil

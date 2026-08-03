@@ -1,11 +1,9 @@
-package services
+package user
 
 import (
 	"banking/config"
-	"banking/dto"
 	appError "banking/errors"
 	"banking/models"
-	"banking/repositories"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -13,19 +11,19 @@ import (
 )
 
 type UserService interface {
-	Register(input *dto.RegistrationInput) error
-	Login(input *dto.LoginInput) (string, error)
+	Register(input *RegistrationInput) error
+	Login(input *LoginInput) (string, error)
 }
 type userService struct {
-	repo repositories.UserRepository
+	repo UserRepository
 }
 
-func NewUserService(repo repositories.UserRepository) UserService {
+func NewUserService(repo UserRepository) UserService {
 	return &userService{
 		repo: repo,
 	}
 }
-func (s *userService) Register(input *dto.RegistrationInput) error {
+func (s *userService) Register(input *RegistrationInput) error {
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -42,7 +40,7 @@ func (s *userService) Register(input *dto.RegistrationInput) error {
 	return nil
 
 }
-func (s *userService) Login(input *dto.LoginInput) (string, error) {
+func (s *userService) Login(input *LoginInput) (string, error) {
 	user, err := s.repo.FindByEmail(input.Email)
 	if err != nil {
 		return "", err

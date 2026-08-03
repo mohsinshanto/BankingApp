@@ -1,7 +1,6 @@
-package repositories
+package account
 
 import (
-	"banking/dto"
 	appError "banking/errors"
 	"banking/models"
 	"errors"
@@ -20,9 +19,9 @@ type AccountRepository interface {
 	BeginTx() *gorm.DB
 	CreateTransaction(tx *gorm.DB, transaction *models.Transaction) error
 	AccountStatusUpdate(account *models.Account) error
-	GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error)
-	GetAccountSummary(accountNo string) (*dto.AccountSummary, error)
-	GetTransactionsByAccount(accountNo string, filter *dto.TransactionFilter) (*dto.TransactionQueryResult, error)
+	GetTransactionStat(accountNo string) (*TransactionStatistics, error)
+	GetAccountSummary(accountNo string) (*AccountSummary, error)
+	GetTransactionsByAccount(accountNo string, filter *TransactionFilter) (*TransactionQueryResult, error)
 }
 type accountRepository struct {
 	db *gorm.DB
@@ -35,7 +34,7 @@ func NewAccountRepository(db *gorm.DB) AccountRepository {
 	}
 
 }
-func (r *accountRepository) GetTransactionsByAccount(accountNo string, filter *dto.TransactionFilter) (*dto.TransactionQueryResult, error) {
+func (r *accountRepository) GetTransactionsByAccount(accountNo string, filter *TransactionFilter) (*TransactionQueryResult, error) {
 	query := r.db.Model(&models.Transaction{})
 
 	query = query.Where(
@@ -71,12 +70,12 @@ func (r *accountRepository) GetTransactionsByAccount(accountNo string, filter *d
 		return nil, err
 	}
 
-	return &dto.TransactionQueryResult{
+	return &TransactionQueryResult{
 		Total:        total,
 		Transactions: transactions,
 	}, nil
 }
-func (r *accountRepository) GetAccountSummary(accountNo string) (*dto.AccountSummary, error) {
+func (r *accountRepository) GetAccountSummary(accountNo string) (*AccountSummary, error) {
 	var totalDeposit, totalWithdraw, totalTransferSent, totalTransferReceived float64
 	var totalTransactions int64
 	if err := r.db.Model(&models.Transaction{}).Select("COALESCE(SUM(amount),0)").Where("to_account=? AND type=?", accountNo, "DEPOSIT").
@@ -99,7 +98,7 @@ func (r *accountRepository) GetAccountSummary(accountNo string) (*dto.AccountSum
 		Count(&totalTransactions).Error; err != nil {
 		return nil, err
 	}
-	return &dto.AccountSummary{
+	return &AccountSummary{
 		TotalTransactions:     totalTransactions,
 		TotalDeposit:          totalDeposit,
 		TotalWithdraw:         totalWithdraw,
@@ -107,7 +106,7 @@ func (r *accountRepository) GetAccountSummary(accountNo string) (*dto.AccountSum
 		TotalTransferReceived: totalTransferReceived,
 	}, nil
 }
-func (r *accountRepository) GetTransactionStat(accountNo string) (*dto.TransactionStatistics, error) {
+func (r *accountRepository) GetTransactionStat(accountNo string) (*TransactionStatistics, error) {
 	var todayCount, weekCount, thisMonthCount, totalCount int64
 	if err := r.db.
 		Model(&models.Transaction{}).
@@ -132,7 +131,7 @@ func (r *accountRepository) GetTransactionStat(accountNo string) (*dto.Transacti
 		return nil, err
 	}
 
-	return &dto.TransactionStatistics{
+	return &TransactionStatistics{
 		AccountNo:            accountNo,
 		TodayTransaction:     todayCount,
 		ThisWeekTransaction:  weekCount,

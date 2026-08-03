@@ -2,12 +2,10 @@ package main
 
 import (
 	"banking/config"
-	"banking/controllers"
 	"banking/database"
+	"banking/internal/account"
+	"banking/internal/user"
 	"banking/models"
-	"banking/repositories"
-	"banking/routes"
-	"banking/services"
 	"log"
 	"os"
 
@@ -22,16 +20,13 @@ func main() {
 	if err := database.DB.AutoMigrate(&models.User{}, &models.Account{}, &models.Transaction{}); err != nil {
 		log.Fatal(err)
 	}
-	// account dependency injection
-	accountRepo := repositories.NewAccountRepository(database.DB)
-	accountService := services.NewAccountService(accountRepo)
-	accountController := controllers.NewAccountController(accountService)
-	// user dependency injection
-	userRepo := repositories.NewUserRepository(database.DB)
-	userService := services.NewUserService(userRepo)
-	userController := controllers.NewUserController(userService)
+	// account dependency module injection
+	accountModule := account.NewModule(database.DB)
+	// user dependency module injection
+	userModule := user.NewModule(database.DB)
 	router := gin.Default()
-	routes.RouteHandler(router, accountController, userController)
+	userModule.RegisterRoutes(router)
+	accountModule.RegisterRoutes(router)
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
 		port = "8080"
