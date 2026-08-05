@@ -50,7 +50,7 @@ func (ac *AccountController) CreateAccount(c *gin.Context) {
 			response.Error(c, http.StatusBadRequest, err.Error())
 
 		default:
-			response.Error(c, http.StatusInternalServerError, err.Error())
+			response.Error(c, http.StatusInternalServerError, "internal server error")
 		}
 		return
 	}
@@ -86,7 +86,7 @@ func (ac *AccountController) Deposit(c *gin.Context) {
 			errors.Is(err, appError.ErrInvalidAmount):
 			response.Error(c, http.StatusBadRequest, err.Error())
 		default:
-			response.Error(c, http.StatusInternalServerError, err.Error())
+			response.Error(c, http.StatusInternalServerError, "internal server error")
 		}
 		return
 	}
@@ -123,7 +123,7 @@ func (ac *AccountController) Withdraw(c *gin.Context) {
 			errors.Is(err, appError.ErrInsufficientBalance):
 			response.Error(c, http.StatusBadRequest, err.Error())
 		default:
-			response.Error(c, http.StatusInternalServerError, err.Error())
+			response.Error(c, http.StatusInternalServerError, "internal server error")
 		}
 		return
 	}
@@ -162,11 +162,11 @@ func (ac *AccountController) MoneyTransfer(c *gin.Context) {
 			errors.Is(err, appError.ErrInsufficientBalance):
 			response.Error(c, http.StatusBadRequest, err.Error())
 		default:
-			response.Error(c, http.StatusInternalServerError, err.Error())
+			response.Error(c, http.StatusInternalServerError, "internal server error")
 		}
 		return
 	}
-	response.Success(c, http.StatusOK, "Money transffered successfully", result)
+	response.Success(c, http.StatusOK, "Money transferred successfully", result)
 
 }
 
@@ -190,7 +190,7 @@ func (ac *AccountController) AccountDetails(c *gin.Context) {
 		case errors.Is(err, appError.ErrAccountNotFound):
 			response.Error(c, http.StatusNotFound, err.Error())
 		default:
-			response.Error(c, http.StatusInternalServerError, err.Error())
+			response.Error(c, http.StatusInternalServerError, "internal server error")
 		}
 		return
 	}
@@ -228,7 +228,7 @@ func (ac *AccountController) AccountStatusUpdate(c *gin.Context) {
 			errors.Is(err, appError.ErrInvalidStatus):
 			response.Error(c, http.StatusBadRequest, err.Error())
 		default:
-			response.Error(c, http.StatusInternalServerError, err.Error())
+			response.Error(c, http.StatusInternalServerError, "internal server error")
 		}
 		return
 	}
@@ -255,7 +255,7 @@ func (ac *AccountController) GetTransactionStatistics(c *gin.Context) {
 		case errors.Is(err, appError.ErrAccountNotFound):
 			response.Error(c, http.StatusNotFound, err.Error())
 		default:
-			response.Error(c, http.StatusInternalServerError, err.Error())
+			response.Error(c, http.StatusInternalServerError, "internal server error")
 		}
 		return
 	}
@@ -282,7 +282,7 @@ func (ac *AccountController) GetAccountSummary(c *gin.Context) {
 		case errors.Is(err, appError.ErrAccountNotFound):
 			response.Error(c, http.StatusNotFound, err.Error())
 		default:
-			response.Error(c, http.StatusInternalServerError, err.Error())
+			response.Error(c, http.StatusInternalServerError, "internal server error")
 		}
 		return
 	}
@@ -332,7 +332,7 @@ func (ac *AccountController) GetTransactionsByAccount(c *gin.Context) {
 			response.Error(c, http.StatusBadRequest, err.Error())
 
 		default:
-			response.Error(c, http.StatusInternalServerError, err.Error())
+			response.Error(c, http.StatusInternalServerError, "internal server error")
 
 		}
 		return

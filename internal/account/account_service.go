@@ -46,7 +46,7 @@ func (s *accountService) GetTransactionsByAccount(accountNo string, filter *Tran
 	}
 	limit, err := strconv.Atoi(filter.Limit)
 	if err != nil || limit < 1 {
-		limit = 2
+		limit = 5
 	}
 
 	if limit > 100 {

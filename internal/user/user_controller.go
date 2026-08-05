@@ -39,7 +39,13 @@ func (uc *UserController) Register(c *gin.Context) {
 	}
 	result, err := uc.service.Register(&registrationInput)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
+		switch {
+		case errors.Is(err, appError.ErrEmailAlreadyExists):
+			response.Error(c, http.StatusBadRequest, err.Error())
+
+		default:
+			response.Error(c, http.StatusInternalServerError, "internal server error")
+		}
 		return
 	}
 	response.Success(c, http.StatusCreated, "new user created", result)
@@ -69,7 +75,7 @@ func (uc *UserController) Login(c *gin.Context) {
 		case errors.Is(err, appError.ErrInvalidCredentials):
 			response.Error(c, http.StatusUnauthorized, err.Error())
 		default:
-			response.Error(c, http.StatusInternalServerError, err.Error())
+			response.Error(c, http.StatusInternalServerError, "internal server error")
 		}
 		return
 	}

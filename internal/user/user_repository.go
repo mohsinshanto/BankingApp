@@ -6,6 +6,7 @@ import (
 
 	appError "banking/errors"
 
+	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -25,6 +26,12 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 func (r *userRepository) Create(user *models.User) error {
 	err := r.db.Create(user).Error
 	if err != nil {
+
+		var mysqlErr *mysql.MySQLError
+		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
+			return appError.ErrEmailAlreadyExists
+		}
+
 		return err
 	}
 	return nil
