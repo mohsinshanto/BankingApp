@@ -11,8 +11,8 @@ import (
 )
 
 type UserService interface {
-	Register(input *RegistrationInput) error
-	Login(input *LoginInput) (string, error)
+	Register(input *RegistrationInput) (*RegisterResponse, error)
+	Login(input *LoginInput) (*LoginResponse, error)
 }
 type userService struct {
 	repo UserRepository
@@ -23,10 +23,10 @@ func NewUserService(repo UserRepository) UserService {
 		repo: repo,
 	}
 }
-func (s *userService) Register(input *RegistrationInput) error {
+func (s *userService) Register(input *RegistrationInput) (*RegisterResponse, error) {
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	dbUser := models.User{
 		Name:     input.Name,
@@ -34,19 +34,23 @@ func (s *userService) Register(input *RegistrationInput) error {
 		Password: string(hashPassword),
 	}
 	if err := s.repo.Create(&dbUser); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &RegisterResponse{
+		ID:    dbUser.ID,
+		Name:  dbUser.Name,
+		Email: dbUser.Email,
+	}, nil
 
 }
-func (s *userService) Login(input *LoginInput) (string, error) {
+func (s *userService) Login(input *LoginInput) (*LoginResponse, error) {
 	user, err := s.repo.FindByEmail(input.Email)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
-		return "", appError.ErrInvalidCredentials
+		return nil, appError.ErrInvalidCredentials
 	}
 	claims := jwt.MapClaims{
 		"user_id": user.ID,
@@ -55,8 +59,10 @@ func (s *userService) Login(input *LoginInput) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(config.JwtSecret)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return tokenString, nil
+	return &LoginResponse{
+		Token: tokenString,
+	}, nil
 
 }

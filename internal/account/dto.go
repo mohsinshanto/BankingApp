@@ -102,8 +102,8 @@ type AccountStatusUpdateResponse struct {
 // deposit
 
 type Deposit struct {
-	AccountNo string  `json:"account_no" binding:"required"`
-	Amount    float64 `json:"amount" binding:"required,gt=0"`
+	AccountNo string  `json:"account_no" binding:"required" example:"ACC87112088"`
+	Amount    float64 `json:"amount" binding:"required,gt=0" example:"500.00"`
 }
 type DepositResponse struct {
 	AccountNo string  `json:"account_no"`

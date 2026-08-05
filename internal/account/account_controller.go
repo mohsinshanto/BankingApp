@@ -19,6 +19,18 @@ func NewAccountController(service AccountService) *AccountController {
 		service: service,
 	}
 }
+
+// CreateAccount godoc
+// @Summary Create a new bank account
+// @Description Creates a bank account for the authenticated user.
+// @Tags Account
+// @Security BearerAuth
+// @Produce json
+// @Success 201 {object} response.ApiResponse "Account created successfully"
+// @Failure 400 {object} response.ApiResponse "Account already exists"
+// @Failure 401 {object} response.ApiResponse "Unauthorized"
+// @Failure 500 {object} response.ApiResponse "Internal server error"
+// @Router /account/ [post]
 func (ac *AccountController) CreateAccount(c *gin.Context) {
 	userID, exists := c.Get("user-id")
 	if !exists {
@@ -44,6 +56,21 @@ func (ac *AccountController) CreateAccount(c *gin.Context) {
 	}
 	response.Success(c, http.StatusCreated, "account created successfully", result)
 }
+
+// Deposit godoc
+// @Summary Deposit money into an account
+// @Description Deposit money into an active bank account.
+// @Tags Account
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body account.Deposit true "Deposit Request"
+// @Success 200 {object} response.ApiResponse
+// @Failure 400 {object} response.ApiResponse
+// @Failure 401 {object} response.ApiResponse
+// @Failure 404 {object} response.ApiResponse
+// @Failure 500 {object} response.ApiResponse
+// @Router /account/deposit [post]
 func (ac *AccountController) Deposit(c *gin.Context) {
 	var inputDepo Deposit
 	if err := c.ShouldBindJSON(&inputDepo); err != nil {

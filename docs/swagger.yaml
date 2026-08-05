@@ -1,0 +1,198 @@
+basePath: /
+definitions:
+  account.Deposit:
+    properties:
+      account_no:
+        example: ACC87112088
+        type: string
+      amount:
+        example: 500
+        type: number
+    required:
+    - account_no
+    - amount
+    type: object
+  response.ApiResponse:
+    properties:
+      data: {}
+      error: {}
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  user.LoginInput:
+    properties:
+      email:
+        type: string
+      password:
+        maxLength: 32
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  user.RegistrationInput:
+    properties:
+      email:
+        example: mohsin@example.com
+        type: string
+      name:
+        example: Mohsin Shanto
+        type: string
+      password:
+        example: password123
+        maxLength: 32
+        minLength: 6
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: A Banking REST API built with Gin and GORM.
+  title: Banking API
+  version: "1.0"
+paths:
+  /account/:
+    post:
+      description: Creates a bank account for the authenticated user.
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Account created successfully
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "400":
+          description: Account already exists
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new bank account
+      tags:
+      - Account
+  /account/deposit:
+    post:
+      consumes:
+      - application/json
+      description: Deposit money into an active bank account.
+      parameters:
+      - description: Deposit Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/account.Deposit'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+      security:
+      - BearerAuth: []
+      summary: Deposit money into an account
+      tags:
+      - Account
+  /user/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password, then generate a JWT
+        token.
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.LoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token generated successfully
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "401":
+          description: Invalid email or password
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+      summary: Login user
+      tags:
+      - User
+  /user/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account
+      parameters:
+      - description: User Registration
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.RegistrationInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+      summary: Register a new user
+      tags:
+      - User
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
