@@ -92,6 +92,21 @@ func (ac *AccountController) Deposit(c *gin.Context) {
 	}
 	response.Success(c, http.StatusOK, "money deposited successfully", result)
 }
+
+// Withdraw godoc
+// @Summary Withdraw money from an account
+// @Description Withdraw money from an active bank account
+// @Tags Account
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body account.Withdraw true "Withdraw Request"
+// @Success 200 {object} response.ApiResponse
+// @Failure 400 {object} response.ApiResponse
+// @Failure 401 {object} response.ApiResponse
+// @Failure 404 {object} response.ApiResponse
+// @Failure 500 {object} response.ApiResponse
+// @Router /account/withdraw [post]
 func (ac *AccountController) Withdraw(c *gin.Context) {
 	var inputWithdraw Withdraw
 	if err := c.ShouldBindJSON(&inputWithdraw); err != nil {
@@ -115,6 +130,21 @@ func (ac *AccountController) Withdraw(c *gin.Context) {
 	response.Success(c, http.StatusOK, "money withdrawn successfully", result)
 
 }
+
+// MoneyTransfer godoc
+// @Summary Transfer money between two accounts
+// @Description Transfer money from one active account to another active account.
+// @Tags Account
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body account.TransferInput true "Money Transfer Request"
+// @Success 200 {object} response.ApiResponse "Money transferred successfully"
+// @Failure 400 {object} response.ApiResponse "Invalid request, inactive account, insufficient balance, or same account transfer"
+// @Failure 401 {object} response.ApiResponse "Unauthorized"
+// @Failure 404 {object} response.ApiResponse "Account not found"
+// @Failure 500 {object} response.ApiResponse "Internal server error"
+// @Router /account/transfer [post]
 func (ac *AccountController) MoneyTransfer(c *gin.Context) {
 	var transferInput TransferInput
 	if err := c.ShouldBindJSON(&transferInput); err != nil {
@@ -139,6 +169,19 @@ func (ac *AccountController) MoneyTransfer(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Money transffered successfully", result)
 
 }
+
+// AccountDetails godoc
+// @Summary Get account details
+// @Description Retrieve details of a bank account by account number.
+// @Tags Account
+// @Security BearerAuth
+// @Produce json
+// @Param accountNo path string true "Account Number"
+// @Success 200 {object} response.ApiResponse "Account details retrieved successfully"
+// @Failure 401 {object} response.ApiResponse "Unauthorized"
+// @Failure 404 {object} response.ApiResponse "Account not found"
+// @Failure 500 {object} response.ApiResponse "Internal server error"
+// @Router /account/details/{accountNo} [get]
 func (ac *AccountController) AccountDetails(c *gin.Context) {
 	accountNo := c.Param("accountNo")
 	details, err := ac.service.AccountDetails(accountNo)
@@ -153,6 +196,22 @@ func (ac *AccountController) AccountDetails(c *gin.Context) {
 	}
 	response.Success(c, http.StatusOK, "Account Details Found", details)
 }
+
+// AccountStatusUpdate godoc
+// @Summary Update account status
+// @Description Update the status of an existing bank account.
+// @Tags Account
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param accountNo path string true "Account Number"
+// @Param request body account.AccountStatusUpdate true "Account Status Update Request"
+// @Success 200 {object} response.ApiResponse "Account status updated successfully"
+// @Failure 400 {object} response.ApiResponse "Invalid request, invalid status, or status already set"
+// @Failure 401 {object} response.ApiResponse "Unauthorized"
+// @Failure 404 {object} response.ApiResponse "Account not found"
+// @Failure 500 {object} response.ApiResponse "Internal server error"
+// @Router /account/status/{accountNo} [put]
 func (ac *AccountController) AccountStatusUpdate(c *gin.Context) {
 	accountNo := c.Param("accountNo")
 	var status AccountStatusUpdate
@@ -175,6 +234,19 @@ func (ac *AccountController) AccountStatusUpdate(c *gin.Context) {
 	}
 	response.Success(c, http.StatusOK, "Account status Updated", result)
 }
+
+// GetTransactionStatistics godoc
+// @Summary Get transaction statistics
+// @Description Retrieve transaction statistics for a specific bank account.
+// @Tags Account
+// @Security BearerAuth
+// @Produce json
+// @Param accountNo path string true "Account Number"
+// @Success 200 {object} response.ApiResponse "Transaction statistics retrieved successfully"
+// @Failure 401 {object} response.ApiResponse "Unauthorized"
+// @Failure 404 {object} response.ApiResponse "Account not found"
+// @Failure 500 {object} response.ApiResponse "Internal server error"
+// @Router /account/statistics/{accountNo} [get]
 func (ac *AccountController) GetTransactionStatistics(c *gin.Context) {
 	accountNo := c.Param("accountNo")
 	result, err := ac.service.GetTransactionStat(accountNo)
@@ -187,8 +259,21 @@ func (ac *AccountController) GetTransactionStatistics(c *gin.Context) {
 		}
 		return
 	}
-	response.Success(c, http.StatusOK, "transaction retrieved successfully", result)
+	response.Success(c, http.StatusOK, "transaction statistics retrieved successfully", result)
 }
+
+// GetAccountSummary godoc
+// @Summary Get account summary
+// @Description Retrieve a summary of a bank account, including balance and transaction totals.
+// @Tags Account
+// @Security BearerAuth
+// @Produce json
+// @Param accountNo path string true "Account Number"
+// @Success 200 {object} response.ApiResponse "Account summary retrieved successfully"
+// @Failure 401 {object} response.ApiResponse "Unauthorized"
+// @Failure 404 {object} response.ApiResponse "Account not found"
+// @Failure 500 {object} response.ApiResponse "Internal server error"
+// @Router /account/summary/{accountNo} [get]
 func (ac *AccountController) GetAccountSummary(c *gin.Context) {
 	accountNo := c.Param("accountNo")
 	result, err := ac.service.GetAccountSummary(accountNo)
@@ -201,8 +286,28 @@ func (ac *AccountController) GetAccountSummary(c *gin.Context) {
 		}
 		return
 	}
-	response.Success(c, http.StatusOK, "here is the summary", result)
+	response.Success(c, http.StatusOK, "Account summary retrieved successfully", result)
 }
+
+// GetTransactionsByAccount godoc
+// @Summary Get account transactions
+// @Description Retrieve transactions for a specific account with pagination, filtering, date range, and sorting.
+// @Tags Account
+// @Security BearerAuth
+// @Produce json
+// @Param accountNo path string true "Account Number"
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Number of records per page" default(5)
+// @Param type query string false "Transaction type (DEPOSIT, WITHDRAW, TRANSFER)"
+// @Param from query string false "Start date (YYYY-MM-DD), e.g. 2026-08-01"
+// @Param to query string false "End date (YYYY-MM-DD), e.g. 2026-08-31"
+// @Param sort query string false "Sort order (newest, oldest)" default(newest)
+// @Success 200 {object} response.ApiResponse "Transactions retrieved successfully"
+// @Failure 400 {object} response.ApiResponse "Invalid query parameters"
+// @Failure 401 {object} response.ApiResponse "Unauthorized"
+// @Failure 404 {object} response.ApiResponse "Account not found"
+// @Failure 500 {object} response.ApiResponse "Internal server error"
+// @Router /account/transactions/{accountNo} [get]
 func (ac *AccountController) GetTransactionsByAccount(c *gin.Context) {
 	accountNo := c.Param("accountNo")
 

@@ -19,7 +19,7 @@ type AccountRepository interface {
 	BeginTx() *gorm.DB
 	CreateTransaction(tx *gorm.DB, transaction *models.Transaction) error
 	AccountStatusUpdate(account *models.Account) error
-	GetTransactionStat(accountNo string) (*TransactionStatistics, error)
+	GetTransactionStat(accountNo string) (*TransactionStatisticsResponse, error)
 	GetAccountSummary(accountNo string) (*AccountSummary, error)
 	GetTransactionsByAccount(accountNo string, filter *TransactionFilter) (*TransactionQueryResult, error)
 }
@@ -106,7 +106,7 @@ func (r *accountRepository) GetAccountSummary(accountNo string) (*AccountSummary
 		TotalTransferReceived: totalTransferReceived,
 	}, nil
 }
-func (r *accountRepository) GetTransactionStat(accountNo string) (*TransactionStatistics, error) {
+func (r *accountRepository) GetTransactionStat(accountNo string) (*TransactionStatisticsResponse, error) {
 	var todayCount, weekCount, thisMonthCount, totalCount int64
 	if err := r.db.
 		Model(&models.Transaction{}).
@@ -131,7 +131,7 @@ func (r *accountRepository) GetTransactionStat(accountNo string) (*TransactionSt
 		return nil, err
 	}
 
-	return &TransactionStatistics{
+	return &TransactionStatisticsResponse{
 		AccountNo:            accountNo,
 		TodayTransaction:     todayCount,
 		ThisWeekTransaction:  weekCount,

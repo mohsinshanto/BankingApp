@@ -7,8 +7,8 @@ import (
 
 // withdraw
 type Withdraw struct {
-	AccountNo string  `json:"account_no" binding:"required"`
-	Amount    float64 `json:"amount" binding:"required,gt=0"`
+	AccountNo string  `json:"account_no" binding:"required" example:"ACC34218765"`
+	Amount    float64 `json:"amount" binding:"required,gt=0" example:"500.00"`
 }
 type WithdrawResponse struct {
 	AccountNo string  `json:"account_no"`
@@ -20,9 +20,9 @@ type WithdrawResponse struct {
 // transfer
 
 type TransferInput struct {
-	SenderAccNo   string  `json:"sender_acc" binding:"required"`
-	ReceiverAccNo string  `json:"receiver_acc" binding:"required"`
-	Amount        float64 `json:"amount" binding:"required,gt=0"`
+	SenderAccNo   string  `json:"sender_acc" binding:"required" example:"ACC34218765"`
+	ReceiverAccNo string  `json:"receiver_acc" binding:"required" example:"ACC34211234"`
+	Amount        float64 `json:"amount" binding:"required,gt=0" example:"500.00"`
 }
 type TransferResponse struct {
 	SenderAccountNo   string  `json:"sender_account_no"`
@@ -33,7 +33,7 @@ type TransferResponse struct {
 
 // TransactionStat
 
-type TransactionStatistics struct {
+type TransactionStatisticsResponse struct {
 	AccountNo            string `json:"account_no"`
 	TodayTransaction     int64  `json:"today_transaction"`
 	ThisWeekTransaction  int64  `json:"this_week_transaction"`
@@ -92,7 +92,7 @@ type AccountSummary struct {
 // statusUpdate
 
 type AccountStatusUpdate struct {
-	Status string `json:"status" binding:"required"`
+	Status string `json:"status" binding:"required" example:"BLOCKED"`
 }
 type AccountStatusUpdateResponse struct {
 	AccountNo string `json:"account_no"`
@@ -114,7 +114,7 @@ type DepositResponse struct {
 
 // accountDetails
 
-type AccountDetails struct {
+type AccountDetailsResponse struct {
 	AccountNo string    `json:"account_no"`
 	Balance   float64   `json:"account_balance"`
 	Status    string    `json:"account_status"`

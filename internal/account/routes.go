@@ -15,10 +15,10 @@ func (m *Module) RegisterRoutes(r *gin.Engine) {
 	account.POST("/withdraw", m.Controller.Withdraw)
 	account.POST("/transfer", m.Controller.MoneyTransfer)
 
-	account.GET("/:accountNo", m.Controller.AccountDetails)
-	account.PUT("/:accountNo/status", m.Controller.AccountStatusUpdate)
+	account.GET("/details/:accountNo", m.Controller.AccountDetails)
+	account.PUT("/status/:accountNo", m.Controller.AccountStatusUpdate)
 
-	account.GET("/:accountNo/statistics", m.Controller.GetTransactionStatistics)
-	account.GET("/:accountNo/summary", m.Controller.GetAccountSummary)
-	account.GET("/:accountNo/transactions", m.Controller.GetTransactionsByAccount)
+	account.GET("/statistics/:accountNo", m.Controller.GetTransactionStatistics)
+	account.GET("/summary/:accountNo", m.Controller.GetAccountSummary)
+	account.GET("/transactions/:accountNo", m.Controller.GetTransactionsByAccount)
 }

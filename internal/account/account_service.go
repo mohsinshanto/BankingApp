@@ -24,9 +24,9 @@ type AccountService interface {
 	Deposit(accountNo string, amount float64) (*DepositResponse, error)
 	Withdraw(accountNo string, amount float64) (*WithdrawResponse, error)
 	MoneyTransfer(transferInput *TransferInput) (*TransferResponse, error)
-	AccountDetails(accountNo string) (*AccountDetails, error)
+	AccountDetails(accountNo string) (*AccountDetailsResponse, error)
 	AccountStatusUpdate(accountNo, status string) (*AccountStatusUpdateResponse, error)
-	GetTransactionStat(accountNo string) (*TransactionStatistics, error)
+	GetTransactionStat(accountNo string) (*TransactionStatisticsResponse, error)
 	GetAccountSummary(accountNo string) (*AccountSummaryResponse, error)
 	GetTransactionsByAccount(accountNo string, filter *TransactionFilter) (*TransactionListResponse, error)
 }
@@ -147,7 +147,7 @@ func (s *accountService) GetAccountSummary(accountNo string) (*AccountSummaryRes
 		TotalTransferReceived: result.TotalTransferReceived,
 	}, nil
 }
-func (s *accountService) GetTransactionStat(accountNo string) (*TransactionStatistics, error) {
+func (s *accountService) GetTransactionStat(accountNo string) (*TransactionStatisticsResponse, error) {
 	_, err := s.repo.FindByAccountNo(accountNo)
 	if err != nil {
 		return nil, err
@@ -307,12 +307,12 @@ func (s *accountService) MoneyTransfer(transferInput *TransferInput) (*TransferR
 		SenderNewBalance:  senderAccount.Balance,
 	}, nil
 }
-func (s *accountService) AccountDetails(accountNo string) (*AccountDetails, error) {
+func (s *accountService) AccountDetails(accountNo string) (*AccountDetailsResponse, error) {
 	account, err := s.repo.FindAccountDetails(accountNo)
 	if err != nil {
 		return nil, err
 	}
-	return &AccountDetails{
+	return &AccountDetailsResponse{
 		AccountNo: account.AccountNo,
 		Balance:   account.Balance,
 		Status:    account.Status,

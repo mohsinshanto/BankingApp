@@ -1,9 +1,45 @@
 basePath: /
 definitions:
+  account.AccountStatusUpdate:
+    properties:
+      status:
+        example: BLOCKED
+        type: string
+    required:
+    - status
+    type: object
   account.Deposit:
     properties:
       account_no:
         example: ACC87112088
+        type: string
+      amount:
+        example: 500
+        type: number
+    required:
+    - account_no
+    - amount
+    type: object
+  account.TransferInput:
+    properties:
+      amount:
+        example: 500
+        type: number
+      receiver_acc:
+        example: ACC34211234
+        type: string
+      sender_acc:
+        example: ACC34218765
+        type: string
+    required:
+    - amount
+    - receiver_acc
+    - sender_acc
+    type: object
+  account.Withdraw:
+    properties:
+      account_no:
+        example: ACC34218765
         type: string
       amount:
         example: 500
@@ -123,6 +159,297 @@ paths:
       security:
       - BearerAuth: []
       summary: Deposit money into an account
+      tags:
+      - Account
+  /account/details/{accountNo}:
+    get:
+      description: Retrieve details of a bank account by account number.
+      parameters:
+      - description: Account Number
+        in: path
+        name: accountNo
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Account details retrieved successfully
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "404":
+          description: Account not found
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+      security:
+      - BearerAuth: []
+      summary: Get account details
+      tags:
+      - Account
+  /account/statistics/{accountNo}:
+    get:
+      description: Retrieve transaction statistics for a specific bank account.
+      parameters:
+      - description: Account Number
+        in: path
+        name: accountNo
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction statistics retrieved successfully
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "404":
+          description: Account not found
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+      security:
+      - BearerAuth: []
+      summary: Get transaction statistics
+      tags:
+      - Account
+  /account/status/{accountNo}:
+    put:
+      consumes:
+      - application/json
+      description: Update the status of an existing bank account.
+      parameters:
+      - description: Account Number
+        in: path
+        name: accountNo
+        required: true
+        type: string
+      - description: Account Status Update Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/account.AccountStatusUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Account status updated successfully
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "400":
+          description: Invalid request, invalid status, or status already set
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "404":
+          description: Account not found
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+      security:
+      - BearerAuth: []
+      summary: Update account status
+      tags:
+      - Account
+  /account/summary/{accountNo}:
+    get:
+      description: Retrieve a summary of a bank account, including balance and transaction
+        totals.
+      parameters:
+      - description: Account Number
+        in: path
+        name: accountNo
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Account summary retrieved successfully
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "404":
+          description: Account not found
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+      security:
+      - BearerAuth: []
+      summary: Get account summary
+      tags:
+      - Account
+  /account/transactions/{accountNo}:
+    get:
+      description: Retrieve transactions for a specific account with pagination, filtering,
+        date range, and sorting.
+      parameters:
+      - description: Account Number
+        in: path
+        name: accountNo
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 5
+        description: Number of records per page
+        in: query
+        name: limit
+        type: integer
+      - description: Transaction type (DEPOSIT, WITHDRAW, TRANSFER)
+        in: query
+        name: type
+        type: string
+      - description: Start date (YYYY-MM-DD), e.g. 2026-08-01
+        in: query
+        name: from
+        type: string
+      - description: End date (YYYY-MM-DD), e.g. 2026-08-31
+        in: query
+        name: to
+        type: string
+      - default: newest
+        description: Sort order (newest, oldest)
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transactions retrieved successfully
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "400":
+          description: Invalid query parameters
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "404":
+          description: Account not found
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+      security:
+      - BearerAuth: []
+      summary: Get account transactions
+      tags:
+      - Account
+  /account/transfer:
+    post:
+      consumes:
+      - application/json
+      description: Transfer money from one active account to another active account.
+      parameters:
+      - description: Money Transfer Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/account.TransferInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Money transferred successfully
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "400":
+          description: Invalid request, inactive account, insufficient balance, or
+            same account transfer
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "404":
+          description: Account not found
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+      security:
+      - BearerAuth: []
+      summary: Transfer money between two accounts
+      tags:
+      - Account
+  /account/withdraw:
+    post:
+      consumes:
+      - application/json
+      description: Withdraw money from an active bank account
+      parameters:
+      - description: Withdraw Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/account.Withdraw'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+      security:
+      - BearerAuth: []
+      summary: Withdraw money from an account
       tags:
       - Account
   /user/login:
