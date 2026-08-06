@@ -11,8 +11,8 @@ type RegisterResponse struct {
 	Email string `json:"email" example:"mohsin@example.com"`
 }
 type LoginInput struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6,max=32,excludes= "`
+	Email    string `json:"email" binding:"required,email" example:"mohsin@example.com"`
+	Password string `json:"password" binding:"required,min=6,max=32,excludes= " example:"password123"`
 }
 type LoginResponse struct {
 	Token string `json:"token"`

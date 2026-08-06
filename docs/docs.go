@@ -759,12 +759,14 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "mohsin@example.com"
                 },
                 "password": {
                     "type": "string",
                     "maxLength": 32,
-                    "minLength": 6
+                    "minLength": 6,
+                    "example": "password123"
                 }
             }
         },

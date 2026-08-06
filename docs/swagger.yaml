@@ -60,8 +60,10 @@ definitions:
   user.LoginInput:
     properties:
       email:
+        example: mohsin@example.com
         type: string
       password:
+        example: password123
         maxLength: 32
         minLength: 6
         type: string
