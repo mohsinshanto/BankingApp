@@ -19,6 +19,7 @@ The application provides user authentication, bank account management, transacti
 - Database transactions for money transfers
 - Custom application errors
 - Layered architecture
+- Docker containerization
 ## Tech Stack
 - **Go** — Backend programming language
 - **Gin** — HTTP web framework for building REST APIs
@@ -231,6 +232,39 @@ Swagger provides:
 - Authentication
 - Response documentation
 - Interactive API testing
+## Docker
+The application is containerized using Docker, and the Docker image is published on Docker Hub.
+### Pull the docker image
+```bash
+docker pull mohsin5702/banking-app:latest
+```
+### Run the docker container
+```bash
+docker run -p 8080:8080 mohsin5702/banking-app:latest
+```
+The Api will be available at:
+```text
+http://localhost:8080
+```
+### Docker workflow
+```text
+Source Code
+     │
+     ▼
+ Dockerfile
+     │
+     ▼
+ Docker Image
+     │
+     ▼
+  Docker Hub
+     │
+     ▼
+ Docker Container
+     │
+     ▼
+ Banking API
+```
 ## Getting Started
 ### Prerequisites
 
