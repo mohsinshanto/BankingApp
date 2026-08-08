@@ -242,5 +242,94 @@ Make sure you have:
 ## Clone the repository
 ```bash
 git clone <https://github.com/mohsinshanto/BankingApp.git>
-cd BankingApp
+cd bankingApp
 ```
+### Configure environment variables
+
+Create a .env file in the project root:
+```env
+DB_USER=your_mysql_user
+DB_PASSWORD=your_mysql_password
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=banking
+JWT_SECRET=your_secret_key
+SERVER_PORT=8080
+```
+Do not commit your .env file to GitHub.
+Add it to .gitignore:
+```text
+.env
+```
+### Install dependencies
+```bash
+go mod download
+```
+### Run this application
+```bash
+go run main.go
+```
+The Api will be available at:
+```text
+http://localhost:8080
+```
+### Swagger
+```text
+http://localhost:8080/swagger/index.html
+```
+### Example Login Request
+```http
+POST /user/login
+Content-Type: application/json
+```
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+### Example Response:
+```json
+{
+  "success": true,
+  "message": "token generated successfully",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIs..."
+  }
+}
+```
+### Example Deposit Request
+```http
+POST /account/deposit
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+```json
+{
+  "account_no": "ACC34218765",
+  "amount": 500.00
+}
+```
+### Example Response:
+```json
+{
+  "success": true,
+  "message": "money deposited successfully",
+  "data": {
+    "account_no": "ACC34218765",
+    "balance": 1500.00,
+    "deposited_amount": 500.00,
+    "status": "ACTIVE"
+  }
+}
+```
+## Future improvements 
+Possible future improvements include:
+- Automated testing
+- Refresh token mechanism
+- Structured logging
+- CI/CD pipeline
+- Improved monetary precision using decimal types
+## Author
+### Mohsin Shanto
+Backend Developer | Go
