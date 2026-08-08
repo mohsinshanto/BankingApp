@@ -133,3 +133,101 @@ Protected endpoints require:
 ```text
 Authorization: Bearer <token>
 ```
+## API Endpoints
+### User
+| Method | Endpoint         | Description           |
+| ------ | ---------------- | --------------------- |
+| POST   | `/user/register` | Register a new user   |
+| POST   | `/user/login`    | Login and receive JWT |
+### Account
+| Method | Endpoint                           | Description                |
+| ------ | ---------------------------------- | -------------------------- |
+| POST   | `/account/`                        | Create a bank account      |
+| POST   | `/account/deposit`                 | Deposit money              |
+| POST   | `/account/withdraw`                | Withdraw money             |
+| POST   | `/account/transfer`                | Transfer money             |
+| GET    | `/account/:accountNo`              | Get account details        |
+| PUT    | `/account/:accountNo/status`       | Update account status      |
+| GET    | `/account/:accountNo/statistics`   | Get transaction statistics |
+| GET    | `/account/:accountNo/summary`      | Get account summary        |
+| GET    | `/account/:accountNo/transactions` | Get account transactions   |
+
+All account endpoints require JWT authentication.
+## Transaction Filtering
+The transaction endpoint supports:
+- Pagination
+- Transaction type filtering
+- Date range filtering
+- Sorting
+Example:
+```text
+GET /account/ACC12345678/transactions?page=1&limit=5&type=DEPOSIT&from=2026-08-01&to=2026-08-31&sort=newest
+```
+Supported transaction types:
+```text
+DEPOSIT
+WITHDRAW
+TRANSFER
+```
+## Database
+The application uses MySQL with GORM.
+Main Entities: 
+```text
+User
+ │
+ └── Account
+       │
+       └── Transaction
+```
+Users have accounts, and accounts have transaction records.
+Email addresses are protected with a unique database constraint.
+## Money Transfer
+Money transfers are performed inside a database transaction.
+The application locks the relevant account rows while transferring money to prevent concurrent operations from causing inconsistent balances.
+```text
+Begin Transaction
+       │
+       ▼
+Lock Sender Account
+       │
+       ▼
+Lock Receiver Account
+       │
+       ▼
+Validate Balance & Status
+       │
+       ▼
+Update Balances
+       │
+       ▼
+Create Transaction Records
+       │
+       ▼
+Commit Transaction
+```
+If an error occurs, the transaction is rolled back.
+## Error Handling
+This application uses custom error such as:
+```text
+ErrAccountNotFound
+ErrInvalidStatus
+ErrInsufficientBalance
+ErrInvalidAmount
+ErrSameAccountTransfer
+ErrEmailAlreadyExists
+```
+Errors are mapped to appropriate HTTP responses.
+Internal server errors are not exposed directly to API clients.
+## Swagger Documentation
+Swagger is integrated for interactive API documentation.
+After starting the application, open:
+```text
+http://localhost:8080/swagger/index.html
+```
+Swagger provides:
+- Available endpoints
+- Request parameters
+- Request body examples
+- Authentication
+- Response documentation
+- Interactive API testing
