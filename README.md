@@ -241,5 +241,6 @@ Make sure you have:
 - A MySQL database created
 ## Clone the repository
 ```bash
-git clone <>
+git clone <https://github.com/mohsinshanto/BankingApp.git>
+cd BankingApp
 ```
