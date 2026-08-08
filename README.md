@@ -231,3 +231,15 @@ Swagger provides:
 - Authentication
 - Response documentation
 - Interactive API testing
+## Getting Started
+### Prerequisites
+
+Make sure you have:
+
+- Go installed
+- MySQL installed and running
+- A MySQL database created
+## Clone the repository
+```bash
+git clone <>
+```
